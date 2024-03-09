@@ -9,44 +9,67 @@ class Afternoon_Activity(models.Model):
     It can be easliy searched by sorting my the second_activity booloean field.
     """
     def __str__(self):
-        return "Afternoon_Activity"
-    date = models.DateField(primary_key=True, editable=False)
+        return "Afternoon Activity: " + str(self.date) + " " + str(self.activity) + " preference: " + str(self.perference)    
+    date = models.DateField()
     second_activity= models.BooleanField(default=False)
     activity = models.ForeignKey("Activity", on_delete=models.CASCADE, related_name="activity_with_perference")
-    camper = models.ManyToManyField("Camper", related_name="camper_in_activity")
-    activity_leader = models.ForeignKey("Counselor", on_delete=models.CASCADE, related_name="counselor_in_afternoon_activity")
-
-class Activity(models.Model):
-    def __str__(self):
-        return ("Activity_"+str(self.activity))
-    activity = models.CharField(max_length=20)
-    # 1 being the highest priority and 3 being the lowest priority
+    # camper = models.ManyToManyField("Camper", related_name="camper_assosiated_with_activity")
+        # 1 being the highest priority and 3 being the lowest priority
     perference = models.IntegerField(default=0)
     class Meta:
         constraints = [
             models.CheckConstraint(check=models.Q(perference__gte=0, perference__lte=3), name='perference_in_range'),
         ]
 
+class Campers_Afternoon_Relation(models.Model):
+    '''
+    This is the relation between afternoon_activity and camper
+    '''
+    def __str__(self):
+        return str(self.camper) + " + " + str(self.afternoon_activity)
+    afternoon_activity = models.ForeignKey("Afternoon_Activity", on_delete=models.CASCADE, related_name="activity_for_camper")
+    camper = models.ForeignKey("Camper", on_delete=models.CASCADE, related_name="camper_in_activity")
+
+class Activity(models.Model):
+    """
+    List of all the activities that the campers can choose from
+    """
+    def __str__(self):
+        return (str(self.activity))
+    activity = models.CharField(max_length=20)
+
 class Camper(models.Model):
-    def __self__(self):
-        return "Camper: " + self.first_name + " " + self.last_name
+    """ 
+    Camper profile
+    """
+    def __str__(self):
+        return self.first_name + " " + self.last_name
+    
     first_name = models.CharField(max_length=20)
     last_name = models.CharField(max_length=20)
-    cabin_number = models.ForeignKey("Cabin", on_delete=models.CASCADE, related_name="cabin_for_camper")
-    counselor = models.ManyToManyField("Counselor", related_name="campers_counselor")
-    afternoon_activity = models.ManyToManyField("Afternoon_Activity", related_name="afternoon_activity_selected")
+    cabin = models.ForeignKey("Cabin", on_delete=models.CASCADE, related_name="cabin_for_camper")
+    # afternoon_activity = models.ManyToManyField("Afternoon_Activity", related_name="afternoon_activity_selected", null=True, blank=True)
 
 class Cabin(models.Model):
+    """ 
+    Every Cabin has Campers and Counselors
+    """
     def __str__(self):
         return "Cabin: " + str(self.cabin_number)
-    cabin_number = models.IntegerField(primary_key=True,editable=False)
-    camper = models.ForeignKey("Camper", on_delete=models.CASCADE, related_name="camper_in_cabin") 
-    counselor = models.ForeignKey("Counselor", on_delete=models.CASCADE, related_name="counselor_in_cabin")
+    cabin_number = models.IntegerField(primary_key=True)
+    week_one = models.BooleanField(default=True)
+    # camper = models.ForeignKey("Camper", on_delete=models.CASCADE, related_name="camper_in_cabin", null=True, blank=True) 
+    # counselor = models.ForeignKey("Counselor", on_delete=models.CASCADE, related_name="counselor_in_cabin", null=True, blank=True)
 
 class Counselor(models.Model):
+    """ 
+    Counselors only profile
+    
+    P-staff / volunteers should get there own model"""
     def __str__(self):
-        return "Counselor: " + self.first_name + " " + self.last_name
+        return self.first_name + " " + self.last_name
     first_name = models.CharField(max_length=20)
     last_name = models.CharField(max_length=20)
-    cabin_number = models.OneToOneField("Cabin", on_delete=models.CASCADE, related_name="counselors_cabin")
-    possition = models.ForeignKey("Afternoon_Activity", on_delete=models.SET_NULL, related_name="possition_afternoon_activity", null=True)
+    cabin = models.ForeignKey("Cabin", on_delete=models.CASCADE, related_name="counselors_cabin")
+    # possition = models.ForeignKey("Activity", on_delete=models.SET_NULL, related_name="possition_Activity", null=True, default=None, blank=True)
+
