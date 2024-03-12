@@ -31,7 +31,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
-    "afternoon_activity.apps.AfternoonActivityConfig",
+    'afternoon_activity.apps.AfternoonActivityConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',

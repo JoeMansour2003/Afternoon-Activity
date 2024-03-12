@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8" />
+    <title>Activity Page</title>
+  </head>
+  <body>
+    {% if list_of_campers_in_cabin_x %}
+    <ul>
+      {% for camper in list_of_campers_in_cabin_x %}
+      <li>{{camper}}</li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p>No polls are available.</p>
+    {% endif %}
+  </body>
+</html>
