@@ -1,0 +1,69 @@
+APC = Afternoon Program Coordinator
+HC = Head Counselor
+PD = Program Director
+FI = Future Improvement
+
+I've not worked through a properly organised software develepment cycle before, like you would have, but here's what I'm thinking 
+
+This program should be some GUI, and must be consisitent in its interface - it should not require the APC to open a spreadsheet, except possibly for camper input or printing. The moment they have to modify data in a spreadsheet outside the program, it looks incomplete and breakable, and we won't get buy-in. For emergencies it would be useful for the program to always read/write from user-readable files, i.e. if something does break or the program decides to not start, APC at least has the files and can figure out what their old plans were.
+
+I think this is how we should go about writing the software:
+*** We don't need to mention anything to Exec before completing stage 3, other than that we're working on new assignment software with no guarantees. At stage 3 we can start making promises.
+1 - set up "beginning of the week" input - read camper and staff info from spreadsheets (or figure out copy/paste entry solution), figure out if we're going to write object classes or how we want to handle this. We must be able to modify the active camper list throughout the week if a camper/staff member is not present for some reason (leaves/kicked out, shows up late (PK), etc.) but it must not affect the past output files, the analysis stats, or have any major effect on the output sheet formatting. We need backup files for this. Note that APC gets these camper spreadsheets copied from registration/head counselors. We need a similar input for staff (names, role (Counselor or CIT (i.e. can be assigned alone or not), activity vetoes/preferences).   FI: We must be able to hard-assign exceptions to rules, i.e. assign a CIT to a program alone. (This specific example should be a daily choice. If it's for a full session, just make them a Counselor in this software. Not sure how this interfaces with automatic staff assignment, etc. See Edge Case List items 7,8.)
+2 - set up available activity schedule input - defines which activities are available per activity period, and when available, for which cabins (input is either a list of cabin numbers, i.e. for tubing we'd list some cabin numbers, or accept s/S for senior, j/J for junior, a/A for all). We need pre-prepared weekly schedules and backup files. We must be able to modify it throughout the week as plans and demands change, and as we rotate some programs in and out (tennis, volleyball, whatever we don't run every day).
+3 - set up daily camper choice input - use tab, space, and/or enter keys as appropriate to make things fast for APC. If we use paper to collect choices, we'll use activity choice codes. That was a massive success vs. the old method they used in ~2015/16 at Ignite. I used numbers in 2022, but single letters would be faster. There's 26 letters, wouldn't need to use two keystrokes for anything. Python backend would make using letters easier. The number of choices we collect should be adjustable on a daily basis - i.e. collect 2 choices, but change to 3 choices if we need to (or 4, whatever). [Keep in mind Exec is open to tablet-based input at some point, so this data entry might become automated down the line]
+*** At this point we might want to show a first interface prototype to Exec. The rest of the work is backend or output. If we get here and they ask, I'm certain we can finish the software without implementing automatic staff assignment, and possibly with it.
+4 - set up automatic camper assignments. I have a camper assignment algorithm in Excel already (Visual Basic?). Also figure out Cabin Priority. This takes some thought about how we want to implement this. We need a way to store presets before camp and recall them. Keep in mind the method is likely to change - some head counselors might decide to do it based off of cabin cleaning scores or similar. FI: if we can create full-week choice vs assignment statistics, perhaps this can be used for automatic priority sorting to benefit the campers least frequently assigned to their desired activity choices.
+5 - implement output pages for daily prints - first for APC review, then to a single pdf (or spreadsheet) for print. There's two daily prints, one for choice sheets, one for assignment sheets. Assignment sheets should have camper AND staff assignments for the day. Also make an output sheet for Wingate-facilitated programs.
+*** Present to Exec. Evaluate timeline and determine if 6 could be done manually and implemented as FI.
+6 - design and implement an automatic staff assignment algorithm - I don't have one, and staff are more complex to handle than campers. Staff generally do not like to do the same program for the whole week(s), but I think letting them build experience on a particular activity is good. There's usually a tricky program or two that require pre-arranged staff, like Fishing and A+C.
+
+
+We need to be able to "hard code" certain edge cases, even if they're not used all the time:
+1 - hard-assign individual campers; Adam Tannous and Peter Mokbel always go to fishing. These campers must be assigned first, and possibly include an option to not count them towards the camper limit for that program, on a per-camper basis. (i.e. exclude if edge case 1, include if edge case 6)
+2 - assign campers by cabins; i.e. tubing, etc. (maybe not... they should have to choose to go tubing)
+3 - hard-assign individual staff; i.e. tubing with their own cabin, fishing, A+C, etc.
+4 - hard-assign MoPro staff; sometimes they want to participate in afternoon (tubing, or a particular activity), and we need to include them in the staff count for certain programs so Afternoon staff can be allocated to other places
+5 - campers who say "I did X three days in a row can you fix this" - maybe block them from doing that activity again that week?
+6 - campers who say "I haven't been able to do X yet" - if eligible they need to be hard-assigned to that activity once
+7 - staff who say "I did X three days in a row can you fix this" - maybe block them from doing that activity again that week?
+8 - staff who say "I haven't been able to do X yet" - if eligible they need to be hard-assigned to that activity once
+
+
+On every program start, the user is promted to select a data file. Ideally, all save data for the program to recall and use for one camp session is stored in one file (camper, staff, priority plans, activity plans). Ideally, this file is in some user-readable format (.csv? .xlsx?), for backup purposes. For emergencies it would be useful for the program to always read/write from user-readable files, i.e. if something does break or the program decides to not start, APC at least has the files and can figure out what their old plans were.
+
+Exec asked for stats after 2022. We need output files that don't get modified, for analysis records (written to a separate folder, not part of the normal workflow). The latest-generated file is presumed to be the one with the data that got printed. Ideally these files are in some Excel-digestable format for analysis purposes, or we do the actual analysis in the program and output it on a daily basis. Output data should include camper choice rank vs assignment, should have data relative to all inputs - cabin number, cabin priority for the day, etc. (1st, 2nd, 3rd choice of activity). These should be formatted differently than normal output, one big table is fine, doesn't have to be separated by cabin.
+
+We need to use constant variables to define the expected number of days per session (4? 5?), number of input choices to accept (2? 3? 4?), the number of activity periods in a day (2? 3?). We also need a variable number of cabins defined by the unique list of cabin numbers from the camper input sheets.
+
+We need to be able to "create" a new session before camp with no data and only estimated values (number of cabins, number of campers, number of staff), so the APC can prepare Cabin Priority and Activity Schedule tables.
+
+
+FI: Python is smart, and I had good feedback about including the weather forecast on my sheets. If we can pull the weather forecast through an API that would be awesome.
+
+FI: "group" campers, for example two or three campers might want to do the same activity, but there's not enought spaces for all of them, so move them to the next program together
+
+
+Each workflow in the software (weekly input, daily input, daily output) should be set up with a series of numbered tasks with flags defaulted to red for incomplete. Selecting a task in the list opens a new page with the actual task items, with the flag toggle at the bottom of the page. The flags can be manually toggled to yellow (partially complete) or green (complete). For example:
+
+Daily Input Workflow - performed during afternoon cabin time
+1. Camper List - confirm with HCs/PD that there are no changes to the camper list or staff list, implement any changes
+2. Weather - check weather *URL*, copy forecast here: ____
+3. Activity Choices - displays activity choices/tubing cabins for the day, ensure there are more activity spaces than campers, ensure there are enough counselors to cover each activity, ensure there's sufficient total staff for all activities
+4. Consult with PD
+5. Check with Wingate that they have enough staff to cover activity choices
+6. Print choice sheets to PDF (locked out until all flags are green)
+
+Daily Output Workflow - performed after dinner
+1. Input camper choices
+2. Run Camper Assigner and review output and output stats
+3. Assign staff
+4. Review (Confirm with PD?)
+5. Print activity sheets to PDF (locked out until all flags are green)
+
+
+
+
+
+Input A: Google Form -> Google Sheet
+Input B: Paper -> APC typing
