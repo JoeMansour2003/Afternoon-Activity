@@ -9,16 +9,16 @@ class Afternoon_Activity(models.Model):
     It can be easliy searched by sorting my the second_activity booloean field.
     """
     def __str__(self):
-        return "Afternoon Activity: " + str(self.date) + " " + str(self.activity) + " preference: " + str(self.perference)    
+        return "Afternoon Activity: " + str(self.date) + " " + str(self.activity) + " preference: " + str(self.preference)    
     date = models.DateField()
     second_activity= models.BooleanField(default=False)
-    activity = models.ForeignKey("Activity", on_delete=models.CASCADE, related_name="activity_with_perference")
-    # camper = models.ManyToManyField("Camper", related_name="camper_assosiated_with_activity")
+    activity = models.ForeignKey("Activity", on_delete=models.CASCADE, related_name="activity_with_preference")
+    # camper = models.ManyToManyField("Camper", related_name="camper_associated_with_activity")
         # 1 being the highest priority and 3 being the lowest priority
-    perference = models.IntegerField(default=0)
+    preference = models.IntegerField(default=0)
     class Meta:
         constraints = [
-            models.CheckConstraint(check=models.Q(perference__gte=0, perference__lte=3), name='perference_in_range'),
+            models.CheckConstraint(check=models.Q(preference__gte=0, preference__lte=3), name='preference_in_range'),
         ]
 
 class Campers_Afternoon_Relation(models.Model):
@@ -37,6 +37,7 @@ class Activity(models.Model):
     def __str__(self):
         return (str(self.activity))
     activity = models.CharField(max_length=20)
+    rainy_day = models.BooleanField(default=False)
 
 class Camper(models.Model):
     """ 
