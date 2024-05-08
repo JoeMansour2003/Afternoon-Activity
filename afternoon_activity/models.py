@@ -8,7 +8,7 @@ class Afternoon_Activity(models.Model):
     This is the Model to print and handout to the counselors,
 
     It has all the camper names, the activity and the activity leader as well as the date just to top it off.
-    It can be easliy searched by sorting my the second_activity booloean field.
+    It can be easily searched by sorting my the second_activity boolean field.
     """
     def __str__(self):
         return "Afternoon Activity: " + str(self.date) + " " + str(self.activity) + " preference: " + str(self.preference)
