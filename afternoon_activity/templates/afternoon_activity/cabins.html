@@ -1,0 +1,24 @@
+{% extends './base/home.html' %}
+{% block title %}
+  Cabins
+{% endblock %}
+{% block main_content %}
+<div class="text-center">
+  <h1>Cabins</h1>
+  <div class="row">
+    {% for cabin in list_of_cabins %}
+      <div class="col-md-4">
+        <div class="card text-center">
+          {% comment %} <img src="{% static 'afternoon_activity/img/cabin{{ cabin.cabin_number }}.jpg' %}" class="card-img-top" alt="Cabin 1" /> {% endcomment %}
+          <div class="card-body">
+            <h5 class="card-title">Cabin {{ cabin.cabin_number }}</h5>
+            <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>
+            <a href="#" class="btn btn-primary">Go somewhere</a>
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+{% endblock main_content %}
+</div>

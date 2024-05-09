@@ -1,0 +1,19 @@
+
+$light-yellow: #f8ffe5ff;
+$emerald: #06d6a0ff;
+$blue-munsell: #1b9aaaff;
+$bright-pink-crayola: #ef476fff;
+$amber: #ffc43dff;
+
+// Override Bootstrap's default variables
+$theme-colors: (
+  "primary": $blue-munsell,
+  // "secondary": ,
+  "success": $emerald ,
+  "danger": $bright-pink-crayola,
+  "warning": $amber,
+  "light": $light-yellow,
+);
+
+// Import Bootstrap's source files
+@import "../node_modules/bootstrap/scss/bootstrap";

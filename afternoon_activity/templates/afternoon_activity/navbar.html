@@ -1,0 +1,49 @@
+{% load static %}
+<nav class="navbar bg-body-tertiary fixed-top">
+    <div class="container">
+    <a class="navbar-brand order-1" href="{% url 'afternoon_activity:homepage' %}">
+        <img class="navbar-logo" style="width: 50px; height: 50px;" src="{% static 'afternoon_activity/img/Camp-T_logo-rounded.png' %}" alt="Camp Transfiguration Logo" >
+        Camp Transfiguration
+    </a>
+      <a class="navbar-brand order-2" href="#">Weather</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasNavbar" aria-controls="offcanvasNavbar" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="offcanvas offcanvas-start" tabindex="-1" id="offcanvasNavbar" aria-labelledby="offcanvasNavbarLabel">
+        <div class="offcanvas-header">
+          <h5 class="offcanvas-title" id="offcanvasNavbarLabel">
+            <img class="navbar-logo" style="width: 50px; height: 50px;" src="{% static 'afternoon_activity/img/Camp-T_logo-rounded.png' %}" alt="Camp Transfiguration Logo" >
+            Camp Transfiguration</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body">
+          <ul class="navbar-nav justify-content-end flex-grow-1 pe-3">
+            <li class="nav-item">
+              <a class="nav-link active" aria-current="page" href="{% url 'afternoon_activity:homepage' %}">Home</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{% url 'afternoon_activity:cabins' start_cabin_id=1 end_cabin_id=19 %}">All Cabins</a>
+            </li>
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                Female Cabins
+              </a>
+              <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="#">Juniors</a></li>
+                <li><a class="dropdown-item" href="#">Seniors</a></li>
+              </ul>
+            </li>
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                Male Cabins
+              </a>
+              <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="#">Juniors</a></li>
+                <li><a class="dropdown-item" href="#">Seniors</a></li>
+              </ul>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </nav>

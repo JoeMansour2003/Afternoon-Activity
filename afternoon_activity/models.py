@@ -3,38 +3,8 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.db import models
 
-class Afternoon_Activity(models.Model):
-    """
-    This is the Model to print and handout to the counselors,
-
-    It has all the camper names, the activity and the activity leader as well as the date just to top it off.
-    It can be easily searched by sorting my the second_activity boolean field.
-    """
-    def __str__(self):
-        return "Afternoon Activity: " + str(self.date) + " " + str(self.activity) + " preference: " + str(self.preference)
-    date = models.DateField()
-    second_activity= models.BooleanField(default=False)
-    activity = models.ForeignKey("Activity", on_delete=models.CASCADE, related_name="activity_with_preference")
-    # camper = models.ManyToManyField("Camper", related_name="camper_associated_with_activity")
-        # 1 being the highest priority and 3 being the lowest priority
-    preference = models.IntegerField(default=0)
-    class Meta:
-        constraints = [
-            models.CheckConstraint(check=models.Q(preference__gte=0, preference__lte=3), name='preference_in_range'),
-        ]
-
-class Campers_Afternoon_Relation(models.Model):
-    '''
-    This is the relation between afternoon_activity and camper
-    '''
-    def __str__(self):
-        return str(self.camper) + " + " + str(self.afternoon_activity)
-    afternoon_activity = models.ForeignKey("Afternoon_Activity", on_delete=models.CASCADE, related_name="activity_for_camper")
-    camper = models.ForeignKey("Camper", on_delete=models.CASCADE, related_name="camper_in_activity")
-
 def get_default_group():
     return Group.objects.get(group_name="All").id
-
 class Group(models.Model):
     """
     Groups for the activities
@@ -53,6 +23,43 @@ class Group(models.Model):
         super().delete(*args, **kwargs)
     group_name = models.CharField(max_length=30, null=True, blank=True) # Seniors, Juniors
     group = models.ManyToManyField("Cabin", related_name="cabins_in_group")
+class Afternoon_Activity(models.Model):
+    """
+    This is the Model that is used to create the afternoon activities for that day.
+
+    It can be easily searched by sorting by the second_activity boolean field.
+    """
+    def __str__(self):
+        if (self.second_activity):
+            return str(self.date) + " Second Period; Group: " + str(self.allowed_groups) + "; Activity: " + str(self.activity)# + " preference: " + str(self.preference)
+        else:
+            return str(self.date) +  " First Period; Group: "+ str(self.allowed_groups) + "; Activity: " + str(self.activity)
+    date = models.DateField()
+    second_activity= models.BooleanField(default=False)
+    activity = models.ForeignKey("Activity", on_delete=models.CASCADE, related_name="afternoon_activity")
+    allowed_groups = models.ForeignKey("Group", on_delete=models.CASCADE, related_name="group_for_activity", default=get_default_group())
+
+    # group = models.ForeignKey("Group", on_delete=models.CASCADE, related_name="group_for_afternoon_activity")
+    
+    # camper = models.ManyToManyField("Camper", related_name="camper_associated_with_activity")
+        # 1 being the highest priority and 3 being the lowest priority
+    # preference = models.IntegerField(default=0)
+    class Meta:
+        constraints = [
+            # models.CheckConstraint(check=models.Q(preference__gte=0, preference__lte=3), name='preference_in_range'),
+        ]
+class Campers_Afternoon_Relation(models.Model):
+    '''
+    << THIS IS THE MODEL THAT YOU PRINT >>
+    
+    This is the relation between afternoon_activity and camper    
+    '''
+    def __str__(self):
+        return str(self.afternoon_activity) + "; Camper: " + str(self.camper)
+    afternoon_activity = models.ForeignKey("Afternoon_Activity", on_delete=models.CASCADE, related_name="activity_for_camper")
+    camper = models.ForeignKey("Camper", on_delete=models.CASCADE, related_name="camper_in_activity")
+
+
 class Activity(models.Model):
     """
     List of all the activities that the campers can choose from
@@ -62,8 +69,6 @@ class Activity(models.Model):
     activity = models.CharField(max_length=20)
     rainy_day = models.BooleanField(default=False)
     max_participants = models.IntegerField(default=15)
-    allowed_groups = models.ForeignKey("Group", on_delete=models.CASCADE, related_name="group_for_activity", default=get_default_group())
-
 class Camper(models.Model):
     """
     Camper profile
