@@ -1,37 +1,39 @@
 {% load static %}
 {% block bscss %}
-<link href="{% static 'afternoon_activity/node_modules/bootstrap/dist/css/bootstrap.min.css' %}" rel="stylesheet" />
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.3.0/font/bootstrap-icons.css"/>
-<link rel="stylesheet" href="{% static 'afternoon_activity/scss/custom.css' %}"/>
+  <link href="{% static 'afternoon_activity/node_modules/bootstrap/dist/css/bootstrap.min.css' %}" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.3.0/font/bootstrap-icons.css" />
+  <link rel="stylesheet" href="{% static 'afternoon_activity/scss/custom.css' %}" />
 {% endblock %}
+
 <!DOCTYPE html>
 <html>
   <head>
-    <link rel="shortcut icon" href="{% static 'afternoon_activity/img/Camp-T_logo-rounded.png' %}"/>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="shortcut icon" href="{% static 'afternoon_activity/img/Camp-T_logo-rounded.png' %}" />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>
-    {% block title %}
-      Home Page
-    {% endblock title %}
-      </title>
+      {% block title %}
+        Home Page
+      {% endblock %}
+    </title>
+
+    <link rel="stylesheet" type="text/css" href="{% static 'afternoon_activity/css.css' %}" />
   </head>
-  {% comment %} ############### {% endcomment %}
+  {% comment %}###############{% endcomment %}
   <body>
     <div style="padding-bottom: 80px;">
-    {% include '../navbar.html' %}
+      {% include '../navbar.html' %}
     </div>
     <div class="container">
       {% block main_content %}
-      <div class="text-center">
-        <h1>Welcome to the Home Page!</h1>
-      </div>
-      {% endblock main_content %}
+        <div class="text-center">
+          <h1>Welcome to the Home Page!</h1>
+        </div>
+      {% endblock %}
     </div>
-    
   </body>
 </html>
 
 {% block scripts %}
-<script src="{% static 'afternoon_activity/node_modules/bootstrap/dist/js/bootstrap.bundle.min.js' %}"></script>
+  <script src="{% static 'afternoon_activity/node_modules/bootstrap/dist/js/bootstrap.bundle.min.js' %}"></script>
 {% endblock %}

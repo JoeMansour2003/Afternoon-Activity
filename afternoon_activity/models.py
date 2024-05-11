@@ -1,10 +1,9 @@
 from django.contrib.auth.models import User, Group
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from django.db import models
+from django.db import models,transaction
 
-def get_default_group():
-    return Group.objects.get(group_name="All").id
+
 class Group(models.Model):
     """
     Groups for the activities
@@ -17,12 +16,33 @@ class Group(models.Model):
             return str(self.group_name)
         return str(self.group)
     def delete(self, *args, **kwargs):
+        # Prevent deletion of undeletable periods
         if self.group_name in self.UNDELETABLE_NAMES:
-            # This is an undeletable group, prevent deletion
             return
         super().delete(*args, **kwargs)
-    group_name = models.CharField(max_length=30, null=True, blank=True) # Seniors, Juniors
+    group_name = models.CharField(max_length=30, null=True, blank=True) # Seniors, Juniors, All
     group = models.ManyToManyField("Cabin", related_name="cabins_in_group")
+class Period(models.Model):
+    """
+    List of period options: {First Period, Second Period, Morning Exercise, Cabin Time Activities} 
+    """
+    UNDELETABLE_NAMES = {"First Period"}
+    
+    def __str__(self):
+        return str(self.period)
+    def delete(self, *args, **kwargs):
+        # Prevent deletion of undeletable periods
+        if self.period in self.UNDELETABLE_NAMES:
+            return
+        super().delete(*args, **kwargs)
+    period = models.CharField(max_length=30)
+    
+def get_first_period():
+    return Period.objects.get(period="First Period").id
+
+def get_default_group():
+    return Group.objects.get(group_name="All").id
+
 class Afternoon_Activity(models.Model):
     """
     This is the Model that is used to create the afternoon activities for that day.
@@ -30,14 +50,18 @@ class Afternoon_Activity(models.Model):
     It can be easily searched by sorting by the second_activity boolean field.
     """
     def __str__(self):
-        if (self.second_activity):
-            return str(self.date) + " Second Period; Group: " + str(self.allowed_groups) + "; Activity: " + str(self.activity)# + " preference: " + str(self.preference)
-        else:
-            return str(self.date) +  " First Period; Group: "+ str(self.allowed_groups) + "; Activity: " + str(self.activity)
+        return str(self.date) + str(self.period) + str(self.allowed_groups) + "; Activity: " + str(self.activity)# + " preference: " + str(self.preference)
     date = models.DateField()
-    second_activity= models.BooleanField(default=False)
-    activity = models.ForeignKey("Activity", on_delete=models.CASCADE, related_name="afternoon_activity")
+    rainy_day= models.BooleanField(default=False)
     allowed_groups = models.ForeignKey("Group", on_delete=models.CASCADE, related_name="group_for_activity", default=get_default_group())
+    period = models.ForeignKey("Period", on_delete=models.CASCADE, related_name="afternoon_activity_period", default=get_first_period())
+    activity = models.ForeignKey("Activity", on_delete=models.CASCADE, related_name="afternoon_activity")
+    spots_left = models.IntegerField(help_text="Will be automatically overwritten with 'max_participants' for the activity in question.", null=True, blank=True, default=None) # Set to max_participants in the save function bellow
+    def save(self, *args, **kwargs):
+        self.spots_left = self.activity.max_participants # No matter what you put in the spots_left field, it will always be the max_participants
+        super().save(*args, **kwargs)
+    
+    # counselor = models.ForeignKey("Counselor", on_delete=models.CASCADE, related_name="counselor_for_activity")
 
     # group = models.ForeignKey("Group", on_delete=models.CASCADE, related_name="group_for_afternoon_activity")
     
@@ -78,20 +102,53 @@ class Camper(models.Model):
 
     first_name = models.CharField(max_length=20)
     last_name = models.CharField(max_length=20)
-    cabin = models.ForeignKey("Cabin", on_delete=models.CASCADE, related_name="cabin_for_camper")
+    session_cabin = models.ForeignKey("SessionCabin", on_delete=models.CASCADE, related_name="cabin_for_camper")
+    
     # afternoon_activity = models.ManyToManyField("Afternoon_Activity", related_name="afternoon_activity_selected", null=True, blank=True)
 
+class Session(models.Model):
+    """
+    List of all Sessions
+    """
+    def __str__(self):
+        return "Session: " + str(self.session_number)
+    session_number = models.IntegerField(null=True, blank=True) #primary_key=True
+    # camper = models.ForeignKey("Camper", on_delete=models.CASCADE, related_name="camper_in_cabin", null=True, blank=True)
+    # counselor = models.ForeignKey("Counselor", on_delete=models.CASCADE, related_name="counselor_in_cabin", null=True, blank=True)
 class Cabin(models.Model):
     """
-    Every Cabin has Campers and Counselors
+    List of all Cabins
     """
     def __str__(self):
         return "Cabin: " + str(self.cabin_number)
     cabin_number = models.IntegerField(primary_key=True)
-    week_one = models.BooleanField(default=True)
     # camper = models.ForeignKey("Camper", on_delete=models.CASCADE, related_name="camper_in_cabin", null=True, blank=True)
     # counselor = models.ForeignKey("Counselor", on_delete=models.CASCADE, related_name="counselor_in_cabin", null=True, blank=True)
+class SessionCabin(models.Model):
+    """
+    Automatically created Cartesian Product of Session and Cabin 
+    """
+    def __str__(self):
+        return f"Session: {self.session.session_number}, Cabin: {self.cabin.cabin_number}"
+    session = models.ForeignKey(Session, on_delete=models.CASCADE)
+    cabin = models.ForeignKey(Cabin, on_delete=models.CASCADE)
 
+@transaction.atomic
+def populate_session_cabin():
+    """
+    Preforms the Cartesian Product of Session and Cabin
+    """
+    sessions = Session.objects.all()
+    cabins = Cabin.objects.all()
+    
+    for session in sessions:
+        for cabin in cabins:
+            SessionCabin.objects.create(session=session, cabin=cabin)
+            
+@receiver(post_save, sender=Cabin)
+@receiver(post_save, sender=Session)
+def run_on_create_or_update(sender, **kwargs):
+    populate_session_cabin()
 
 class Counselor(models.Model):
     """
@@ -100,22 +157,10 @@ class Counselor(models.Model):
     P-staff / volunteers should get there own model"""
     def __str__(self):
         return self.first_name + " " + self.last_name
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
     first_name = models.CharField(max_length=20)
     last_name = models.CharField(max_length=20)
-    email = models.EmailField(max_length=50, unique=True)
+    email = models.EmailField(max_length=50, unique=True, null=True, blank=True)
+    phone_number = models.IntegerField(unique=True, null=True, blank=True)
     cabin = models.ForeignKey("Cabin", on_delete=models.CASCADE, related_name="counselors_cabin")
-    # possition = models.ForeignKey("Activity", on_delete=models.SET_NULL, related_name="possition_Activity", null=True, default=None, blank=True)
-
-# @receiver(post_save, sender=Counselor)
-# def create_user_profile(sender, instance, created, **kwargs):
-#     if created:
-#         group = Group.objects.get(name='Counselor/CIT Staff')[0]
-#         instance.user.groups.add(group)
-#         instance.user.is_staff = True
-#         instance.user.username = instance.email
-#         instance.user.first_name = instance.first_name
-#         instance.user.last_name = instance.last_name
-#         instance.user.email = instance.email
-#         instance.user.set_password('camp2024')
-#         instance.user.save()
+    afternoon_role = models.ForeignKey("Afternoon_Activity", on_delete=models.CASCADE, related_name="counselor_for_activity", null=True, blank=True)
+    

@@ -3,22 +3,31 @@
   Cabins
 {% endblock %}
 {% block main_content %}
-<div class="text-center">
-  <h1>Cabins</h1>
-  <div class="row">
-    {% for cabin in list_of_cabins %}
-      <div class="col-md-4">
-        <div class="card text-center">
-          {% comment %} <img src="{% static 'afternoon_activity/img/cabin{{ cabin.cabin_number }}.jpg' %}" class="card-img-top" alt="Cabin 1" /> {% endcomment %}
-          <div class="card-body">
-            <h5 class="card-title">Cabin {{ cabin.cabin_number }}</h5>
-            <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>
-            <a href="#" class="btn btn-primary">Go somewhere</a>
+  <div class="text-center">
+    <h1 class="text-secondary">Afternoon Activity</h1>
+    <h2>Cabins</h2>
+    {% if not list_of_cabins %}
+      <div class="alert alert-warning" role="alert">It seems that the cabin you have entered does not exist</div>
+      <p>
+        <a class="btn btn-link" href="{% url 'afternoon_activity:cabins' start_cabin_id=1 end_cabin_id=19 %}">If you would like to view all cabins click here</a>
+      </p>
+    {% else %}
+      <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 justify-content-center align-items-center">
+        {% for cabin in list_of_cabins %}
+          <div class="col mb-4">
+            <div class="card shadow border border-dark bg-light">
+              <div class="card-body">
+                <h5 class="card-title text-secondary">Cabin {{ cabin.cabin_number }}</h5>
+                {% for counselor in cabin.counselors_cabin.all %}
+                  <p class="card-text fw-medium text-warning">{{ counselor.first_name }} {{ counselor.last_name }}</p>
+                {% endfor %}
+                <a href="{% url 'afternoon_activity:cabin' cabin_id=cabin.cabin_number %}" class="btn btn-primary">View Cabin {{ cabin.cabin_number }}</a>
+              </div>
+            </div>
           </div>
-        </div>
+        {% endfor %}
       </div>
-    {% endfor %}
+    {% endif %}
   </div>
-
-{% endblock main_content %}
-</div>
+{% endblock %}
+{% comment %} <img src="{% static 'afternoon_activity/img/cabin{{ cabin.cabin_number }}.jpg' %}" class="card-img-top" alt="Cabin 1" /> {% endcomment %}

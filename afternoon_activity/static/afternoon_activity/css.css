@@ -1,0 +1,27 @@
+table.table-striped tbody tr:nth-of-type(even) {
+    background-color: #ffffe5 !important; /* This is the color for the even rows */
+}
+
+table.table-striped thead th {
+    background-color: #f8ffe5 !important; /* This is the color for the header row */
+    color: #000000 !important; /* This is the color for the text in the header */
+}
+
+table.table-striped tbody td {
+    color: #000000 !important; /* This is the color for the text in the table body */
+}
+
+table th {
+    background-color: #f8ffe5 !important;
+    color: #000000 !important; /* Change this to the color you want for the text in the headers */
+}
+
+/* This will change the background color of the table rows */
+table tr {
+    background-color: #ffffe5 !important; /* Change this to the color you want for the background of the rows */
+}
+
+/* This will change the color of the text in the table cells */
+table td {
+    color: #000000 !important; /* Change this to the color you want for the text in the cells */
+}

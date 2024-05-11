@@ -1,0 +1,34 @@
+{% extends './base/home.html' %}
+
+{% block title %}
+  Cabin
+{% endblock %}
+
+{% block main_content %}
+  <table class="table table-striped table-warning">
+    <thead>
+      <tr>
+        <th>Cabin #</th>
+        <th>Camper</th>
+        <th>First Period</th>
+        <th>Second Period</th>
+        <th>Rainny Day Activity</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for camper in campers_in_cabin_x %}
+        <tr>
+          <td>{{ camper.cabin }}</td>
+          <td>{{ camper.first_name }} {{ camper.last_name }}</td>
+          <td><select class="form-select">
+            <option selected>Afternoon activity first period</option>
+            {% for first_period_activity in first_period_activities %}
+            <option value="{{ first_period_activity.id }}">{{ first_period_activity.activity }}</option>
+            {% endfor %}
+          </select></td> 
+          <td>{{ camper.second_period }}</td>
+          <td>{{ camper.rainny_day_activity }}</td>
+        </tr>
+      {% endfor %}
+  </table>
+{% endblock %}
