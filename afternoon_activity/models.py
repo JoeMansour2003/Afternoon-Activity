@@ -50,13 +50,14 @@ class Afternoon_Activity(models.Model):
     It can be easily searched by sorting by the second_activity boolean field.
     """
     def __str__(self):
-        return str(self.date) + str(self.period) + str(self.allowed_groups) + "; Activity: " + str(self.activity)# + " preference: " + str(self.preference)
+        return str(self.date) + "; " + str(self.period) + "; " + str(self.allowed_groups) + "; Activity: " + str(self.activity)# + " preference: " + str(self.preference)
     date = models.DateField()
     rainy_day= models.BooleanField(default=False)
     allowed_groups = models.ForeignKey("Group", on_delete=models.CASCADE, related_name="group_for_activity", default=get_default_group())
     period = models.ForeignKey("Period", on_delete=models.CASCADE, related_name="afternoon_activity_period", default=get_first_period())
     activity = models.ForeignKey("Activity", on_delete=models.CASCADE, related_name="afternoon_activity")
     spots_left = models.IntegerField(help_text="Will be automatically overwritten with 'max_participants' for the activity in question.", null=True, blank=True, default=None) # Set to max_participants in the save function bellow
+    campers = models.ManyToManyField("Camper", related_name="camper_associated_with_activity", blank=True)
     def save(self, *args, **kwargs):
         self.spots_left = self.activity.max_participants # No matter what you put in the spots_left field, it will always be the max_participants
         super().save(*args, **kwargs)
@@ -72,16 +73,16 @@ class Afternoon_Activity(models.Model):
         constraints = [
             # models.CheckConstraint(check=models.Q(preference__gte=0, preference__lte=3), name='preference_in_range'),
         ]
-class Campers_Afternoon_Relation(models.Model):
-    '''
-    << THIS IS THE MODEL THAT YOU PRINT >>
+# class Campers_Activity_Relation(models.Model):
+#     '''
+#     << THIS IS THE MODEL THAT YOU PRINT >>
     
-    This is the relation between afternoon_activity and camper    
-    '''
-    def __str__(self):
-        return str(self.afternoon_activity) + "; Camper: " + str(self.camper)
-    afternoon_activity = models.ForeignKey("Afternoon_Activity", on_delete=models.CASCADE, related_name="activity_for_camper")
-    camper = models.ForeignKey("Camper", on_delete=models.CASCADE, related_name="camper_in_activity")
+#     This is the relation between afternoon_activity and camper    
+#     '''
+#     def __str__(self):
+#         return str(self.afternoon_activity) + "; Camper: " + str(self.camper)
+#     afternoon_activity = models.ForeignKey("Afternoon_Activity", on_delete=models.CASCADE, related_name="activity_for_camper")
+#     camper = models.ForeignKey("Camper", on_delete=models.CASCADE, related_name="camper_in_activity")
 
 
 class Activity(models.Model):
@@ -102,7 +103,7 @@ class Camper(models.Model):
 
     first_name = models.CharField(max_length=20)
     last_name = models.CharField(max_length=20)
-    session_cabin = models.ForeignKey("SessionCabin", on_delete=models.CASCADE, related_name="cabin_for_camper")
+    session_cabin = models.ManyToManyField("SessionCabin", related_name="cabin_for_camper")
     
     # afternoon_activity = models.ManyToManyField("Afternoon_Activity", related_name="afternoon_activity_selected", null=True, blank=True)
 
@@ -122,8 +123,7 @@ class Cabin(models.Model):
     def __str__(self):
         return "Cabin: " + str(self.cabin_number)
     cabin_number = models.IntegerField(primary_key=True)
-    # camper = models.ForeignKey("Camper", on_delete=models.CASCADE, related_name="camper_in_cabin", null=True, blank=True)
-    # counselor = models.ForeignKey("Counselor", on_delete=models.CASCADE, related_name="counselor_in_cabin", null=True, blank=True)
+    
 class SessionCabin(models.Model):
     """
     Automatically created Cartesian Product of Session and Cabin 
@@ -161,6 +161,6 @@ class Counselor(models.Model):
     last_name = models.CharField(max_length=20)
     email = models.EmailField(max_length=50, unique=True, null=True, blank=True)
     phone_number = models.IntegerField(unique=True, null=True, blank=True)
-    cabin = models.ForeignKey("Cabin", on_delete=models.CASCADE, related_name="counselors_cabin")
-    afternoon_role = models.ForeignKey("Afternoon_Activity", on_delete=models.CASCADE, related_name="counselor_for_activity", null=True, blank=True)
+    sessionCabin = models.ManyToManyField("SessionCabin", related_name="counselors_for_session_cabin", blank=True)
+    afternoon_role = models.ManyToManyField("Afternoon_Activity", related_name="counselor_for_activity", blank=True)
     

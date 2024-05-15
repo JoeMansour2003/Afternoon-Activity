@@ -20,31 +20,43 @@
           <li class="nav-item">
             <a class="nav-link active" aria-current="page" href="{% url 'afternoon_activity:homepage' %}">Home</a>
           </li>
+          
+          {% for activity in  activity_types %}
           <li class="nav-item">
-            <a class="nav-link" href="{% url 'afternoon_activity:cabins' start_cabin_id=1 end_cabin_id=19 %}">All Cabins</a>
+            
+            {% comment %}
+              !!!!!!!! BASE MODEL WILL ONLY WORK IF YOU HAVE THE SESSION ID !!!!!!
+              !!!!!!!! OVERRIDE THE BASE MODEL'S NAV IN YOUR NEW TEMPLATE THAT YOU ARE CREATING TO PREVENT GETTING THIS ERROR.!!!!!!
+            {% endcomment %}
+            <a class="nav-link active" aria-current="page" href="{% url 'afternoon_activity:cabins' session_id=url_session_number activityPK=activity.pk %}">{{activity}}</a>
           </li>
-          <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown" aria-expanded="false">Female Cabins</a>
+          {% endfor %}
+            
+          {% comment %} <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown" aria-expanded="false">{{session}}</a>
+            <li class="nav-item">
+              <a class="nav-link" href="{% url 'afternoon_activity:cabins' session_id=session.session_number start_cabin_id=1 end_cabin_id=19 %}">All Cabins</a>
+            </li>
             <ul class="dropdown-menu" style="background:#ffffe5">
+              <h6 class="dropdown-header">Female Cabin</h6>
               <li>
-                <a class="dropdown-item" href="{% url 'afternoon_activity:cabins' start_cabin_id=5 end_cabin_id=9 %}">Juniors</a>
+                <a class="dropdown-item" href="{% url 'afternoon_activity:cabins' session_id=session.session_number start_cabin_id=5 end_cabin_id=9 %}">Juniors</a>
               </li>
               <li>
-                <a class="dropdown-item" href="{% url 'afternoon_activity:cabins' start_cabin_id=1 end_cabin_id=6 %}">Seniors</a>
+                <a class="dropdown-item" href="{% url 'afternoon_activity:cabins' session_id=session.session_number start_cabin_id=1 end_cabin_id=6 %}">Seniors</a>
+  
               </li>
             </ul>
-          </li>
-          <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown" aria-expanded="false">Male Cabins</a>
             <ul class="dropdown-menu" style="background:#ffffe5">
+              <h6 class="dropdown-header">Male Cabin</h6>
               <li>
-                <a class="dropdown-item" href="{% url 'afternoon_activity:cabins' start_cabin_id=15 end_cabin_id=19 %}">Juniors</a>
+                <a class="dropdown-item" href="{% url 'afternoon_activity:cabins' session_id=session.session_number start_cabin_id=15 end_cabin_id=19 %}">Juniors</a>
               </li>
               <li>
-                <a class="dropdown-item" href="{% url 'afternoon_activity:cabins' start_cabin_id=11 end_cabin_id=16 %}">Seniors</a>
+                <a class="dropdown-item" href="{% url 'afternoon_activity:cabins' session_id=session.session_number start_cabin_id=11 end_cabin_id=16 %}">Seniors</a>
               </li>
-            </ul>
-          </li>
+          </li> {% endcomment %}
+
         </ul>
       </div>
     </div>

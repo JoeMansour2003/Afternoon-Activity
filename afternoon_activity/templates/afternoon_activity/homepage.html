@@ -1,0 +1,51 @@
+{% extends './base/base.html' %}
+{% load custom_filters %}
+{% load static %}
+
+{% comment %}Same as base but the nav bar does not exist{% endcomment %}
+
+{% block title %}
+  Home Page
+{% endblock %}
+
+{% block navbar %}
+  <div style="padding-bottom: 80px;">
+    <nav class="navbar bg-body-tertiary fixed-top">
+      <div class="container">
+        <a class="navbar-brand order-1" style="padding-right: 40px;"></a>
+        <a class="navbar-brand order-1" href="{% url 'afternoon_activity:homepage' %}">
+          <img class="navbar-logo" style="width: 50px; height: 50px;" src="{% static 'afternoon_activity/img/Camp-T_logo-rounded.png' %}" alt="Camp Transfiguration Logo" />
+          Camp Transfiguration
+        </a>
+        <a class="navbar-brand order-2" href="#">Weather</a>
+      </div>
+    </nav>
+  </div>
+{% endblock %}
+
+{% block main_content %}
+  <h1>Welcome to the Camp-T staff website</h1>
+  <div class="row row-cols-1 row-cols-sm-2 row-cols-md-2 row-cols-lg-2 justify-content-center align-items-center">
+    {% for session in sessions %}
+      {% with image_static='afternoon_activity/img/sessions/session_'|concat:session.session_number|concat:'.webp' %}
+        <div class="col mb-4 justify-content-center">
+          <div class="card shadow border border-dark bg-light">
+            <img src="{% static image_static %}" class="card-img-top" alt="session_{{ session.session_number }}.webp" />
+            <div class="card-body">
+              <h5 class="card-title">{{ session }}</h5>
+              <a href="{% url 'afternoon_activity:activity_selection' session_id=session.session_number %}" class="btn btn-primary">Select {{ session }}</a> <ul class="list-group list-group-flush" style="padding-top: 30px;">
+                <li class="list-group-item bg-light"></li>
+                <li class="list-group-item bg-light" style="padding-top: 20px; padding-bottom: 20px;">
+                  <a href="#" class="btn btn-secondary btn-sm">afternoon_activity</a>
+                </li>
+                <li class="list-group-item bg-light" style="padding-top: 20px; padding-bottom: 20px;">
+                  <a href="#" class="btn btn-secondary btn-sm">morning</a>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      {% endwith %}
+    {% endfor %}
+  </div>
+{% endblock %}

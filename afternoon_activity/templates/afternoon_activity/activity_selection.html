@@ -1,0 +1,35 @@
+{% extends './base/base.html' %}
+{% load custom_filters %}
+{% load static %}
+
+{% block title %}
+  Activity Selection
+{% endblock %}
+
+{% block main_content %}
+  <h1>Select the activity you would like to enroll in</h1>
+  <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 justify-content-center align-items-center">
+    {% for activity in activity_types %}
+      {% with image_static='afternoon_activity/img/activity/'|concat:activity.period|concat:'.webp' %}
+        <div class="col mb-4 justify-content-center">
+          <div class="card shadow border border-dark bg-light">
+            <img src="{% static image_static %}" class="card-img-top" alt="session_{{ session.session_number }}.webp" />
+            <div class="card-body">
+              <h5 class="card-title">{{ activity }}</h5>
+              <a href="{% url 'afternoon_activity:cabins' session_id=session.session_number activityPK=activity.pk %}" class="btn btn-primary">Select {{ activity }}</a>
+              <ul class="list-group list-group-flush" style="padding-top: 30px;">
+                <li class="list-group-item bg-light"></li>
+                <li class="list-group-item bg-light" style="padding-top: 20px; padding-bottom: 20px;">
+                  <a href="{% url 'afternoon_activity:cabins' session_id=session.session_number activityPK=activity.pk start_cabin_id=10 end_cabin_id=20 %}" class="btn btn-secondary btn-sm">Male Cabin</a>
+                </li>
+                <li class="list-group-item bg-light" style="padding-top: 20px; padding-bottom: 20px;">
+                  <a href="{% url 'afternoon_activity:cabins' session_id=session.session_number activityPK=activity.pk start_cabin_id=0 end_cabin_id=10 %}" class="btn btn-secondary btn-sm">Femamle Cabin</a>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      {% endwith %}
+    {% endfor %}
+  </div>
+{% endblock %}
