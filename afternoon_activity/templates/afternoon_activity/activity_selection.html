@@ -17,7 +17,7 @@
             <div class="card-body">
               <h5 class="card-title">{{ activity }}</h5>
               <a href="{% url 'afternoon_activity:cabins' session_id=session.session_number activityPK=activity.pk %}" class="btn btn-primary">Select {{ activity }}</a>
-              <ul class="list-group list-group-flush" style="padding-top: 30px;">
+              <ul class="list-group list-group-flush">
                 <li class="list-group-item bg-light"></li>
                 <li class="list-group-item bg-light" style="padding-top: 20px; padding-bottom: 20px;">
                   <a href="{% url 'afternoon_activity:cabins' session_id=session.session_number activityPK=activity.pk start_cabin_id=10 end_cabin_id=20 %}" class="btn btn-secondary btn-sm">Male Cabin</a>

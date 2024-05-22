@@ -64,11 +64,11 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'afternoon_activity.context_processors.weather_data',
             ],
         },
     },
 ]
-
 WSGI_APPLICATION = 'camp_t.wsgi.application'
 
 

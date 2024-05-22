@@ -1,10 +1,14 @@
+from django.http import JsonResponse
 from django.shortcuts import render,redirect
-from .models import Afternoon_Activity,Activity,Camper,Cabin,Counselor,Group,Session,SessionCabin,Period
-import datetime
+from .models import ProgramActivity,Activity,Camper,Cabin,Counselor,Group,Session,SessionCabin,Period
+import datetime, requests, os
+from dotenv import load_dotenv
+
 
 def homepage(request):
     sessions= Session.objects.all()
-    return render(request, "afternoon_activity/homepage.html", {"sessions":sessions})
+    List_of_activities = Period.objects.all()
+    return render(request, "afternoon_activity/homepage.html", {"sessions":sessions,"List_of_activities":List_of_activities})
 
 def activity_selection(request, session_id):
     session = Session.objects.get(session_number=session_id)
@@ -47,6 +51,13 @@ def cabins(request, session_id, activityPK, start_cabin_id=None, end_cabin_id=No
 
 
 def cabin(request, session_id, activityPK, cabin_id):
+
+    tomorrows_weather_data = get_tomorrows_weather_data()
+    tomorrows_weather = round(tomorrows_weather_data["main"]["feels_like"] - 273.15,1)
+    tomorrows_rain = tomorrows_weather_data["rain"]["3h"] if "rain" in tomorrows_weather_data and "3h" in tomorrows_weather_data["rain"] else 0
+    tomorrows_icon = tomorrows_weather_data["weather"][0]["icon"]
+    tomorrows_description = tomorrows_weather_data["weather"][0]["description"]
+    
     activity_types = Period.objects.all() # Needed for NavBar
     url_session_number =  session_id # Needed for NavBar
 
@@ -57,77 +68,245 @@ def cabin(request, session_id, activityPK, cabin_id):
     
     cabin = Cabin.objects.get(cabin_number=cabin_id) # Cabin Object for that list of cabin_id {Cabin 1} 
     list_of_groups_for_that_cabin = cabin.cabins_in_group.all() # List of Groups for that Cabin {All, Seniors}
-    list_of_activities_for_that_cabin = Afternoon_Activity.objects.filter(allowed_groups__in=list_of_groups_for_that_cabin, period__pk=activityPK) # List of Activities objects for all of those groups {Swimming, Archery}
+    list_of_activities_for_that_cabin = ProgramActivity.objects.filter(allowed_groups__in=list_of_groups_for_that_cabin, period__pk=activityPK) # List of Activities objects for all of those groups {Swimming, Archery}
     
+    periods = ["First Period", "Second Period"]
+
     main_activities = None
     rainy_day_activities = None
     activity_date= None
     # POST request
     if request.method == 'POST':
-        if  'activity-date' in request.POST:
-            selected_date = request.POST['activity-date']
-            # Convert the string to a date object
-            selected_date = datetime.datetime.strptime(selected_date, '%Y-%m-%d').date()
-            # Filter the activities based on the selected date
-            main_activities = list_of_activities_for_that_cabin.filter(date=selected_date, rainy_day=False)
-            rainy_day_activities = list_of_activities_for_that_cabin.filter(date=selected_date, rainy_day=True)
-            activity_date=selected_date
+        if 'submit_all_campers' in request.POST:
+            for camper in Camper.objects.filter(session_cabin=cabin_id):
+                camper_id = request.POST.get('camper_id_' + str(camper.id))
+                activity_id = request.POST.get('activity_id_' + str(camper.id))
+                rainy_day_activity_id = request.POST.get('rainy_day_activity_id_' + str(camper.id))
+                selected_date = request.POST.get('activity-date', None)
+
+                print("#####  submit_all_campers worked #########")
+                
+                camper = Camper.objects.get(id=camper_id)
+                activities_camper_is_currently_enrolled=camper.camper_in_activity.filter(period=activityPK,date=selected_date)
+
+                print(camper)
+                # print(activity)
+                print(rainy_day_activity_id)
+                
+
+                for previous_activity in activities_camper_is_currently_enrolled:
+                    previous_activity.campers.remove(camper)
+                    previous_activity.spots_left += 1
+                    previous_activity.save()
+                    print("we removed the camper from the old activity")
+                    
+                    
+                if (activity_id is not None):
+                    activity = ProgramActivity.objects.get(id=activity_id)
+                    activity.campers.add(camper)
+                    activity.spots_left -= 1
+                    activity.save()
+                    print("### Activity Saved ###")
+                
+                if (rainy_day_activity_id is not None):
+                    rainy_day_activity = ProgramActivity.objects.get(id=rainy_day_activity_id)
+                    rainy_day_activity.campers.add(camper)
+                    rainy_day_activity.spots_left -= 1
+                    rainy_day_activity.save()
+                    print("### Rainy Day Activity Saved ###")
+        elif 'submit_one_camper' in request.POST:
+            camper_id = request.POST['submit_one_camper']
+            activity_id = request.POST.get('activity_id_' + str(camper_id))
+            rainy_day_activity_id = request.POST.get('rainy_day_activity_id_' + str(camper_id))
+            print("#####  submit_selected_campers worked #########")
+
+            # Get the camper and activity instances
+            camper = Camper.objects.get(id=camper_id)
+            all_activity = ProgramActivity.objects.all()
+            selected_date = request.POST.get('activity-date', None)
+            activities_camper_is_currently_enrolled=camper.camper_in_activity.filter(period=activityPK,date=selected_date)
+            print(camper)
+            print(all_activity)
+            print("##########################")
+            print(camper.camper_in_activity.all())
+            print("##########################")
+        
+            for previous_activity in activities_camper_is_currently_enrolled:
+                previous_activity.campers.remove(camper)
+                previous_activity.spots_left += 1
+                previous_activity.save()
+                print("we removed the camper from the activity")
+                
+            if (activity_id is not None):
+                activity = ProgramActivity.objects.get(id=activity_id)
+                activity.campers.add(camper)
+                activity.spots_left -= 1
+                activity.save()
+                print("### Activity Saved ###")
+                
+            if rainy_day_activity_id is not None:
+                rainy_day_activity = ProgramActivity.objects.get(id=rainy_day_activity_id)
+                rainy_day_activity.campers.add(camper)
+                rainy_day_activity.spots_left -= 1
+                rainy_day_activity.save()
+                print("### Rainy Day Activity Saved ###")
+            
+            # Link the camper to the activity
+            if (activity_id is not None):
+                try:
+                    activity.campers.add(camper)
+                    activity.spots_left -= 1
+                except ValueError as e:
+                    print(e)
+                    return JsonResponse({'error': '1 or more camper tried to book an activity that is full. Please choose another activity. Your entry failed to save.'})
+                except Exception as e:
+                    print(e)
+                    return JsonResponse({'error': 'An error occurred. Your entry failed to save.'})
+
+
+            print("##### Hello World #########")
+            
+            
+        
+        if 'activity-date' in request.POST or 'submit_all_campers' in request.POST or 'submit_one_camper' in request.POST:
+            selected_date = request.POST.get('activity-date', None)
+            if selected_date is not None:
+                # Convert the string to a date object
+                selected_date = datetime.datetime.strptime(selected_date, '%Y-%m-%d').date()
+                # Filter the activities based on the selected date
+                main_activities = list_of_activities_for_that_cabin.filter(date=selected_date, rainy_day=False)
+                rainy_day_activities = list_of_activities_for_that_cabin.filter(date=selected_date, rainy_day=True)
+                activity_date=selected_date
     return render(request, "afternoon_activity/Cabin.html", {"campers_in_cabin_x": campers_in_cabin_x, "main_activities": main_activities, "rainy_day_activities": rainy_day_activities, "activity_types":activity_types,"url_session_number":url_session_number,"selected_activity":selected_activity, "cabin":cabin, "activity_date":activity_date, "session_id": session_id,
     "activityPK": activityPK,
-    "cabin_id": cabin_id})
+    "cabin_id": cabin_id,
+    "list_of_activities_for_that_cabin":list_of_activities_for_that_cabin,
+    "periods":periods,
+    "tomorrows_weather":tomorrows_weather,
+    "tomorrows_rain":tomorrows_rain,
+    "tomorrows_icon":tomorrows_icon,
+    "tomorrows_description":tomorrows_description})
+    
+def get_tomorrows_weather_data():
+    load_dotenv()
+    lat = os.getenv("lat")
+    lon = os.getenv("lon")
+    api_key = os.getenv("OPENWEATHERMAP_API_KEY2")
 
-def processing(request, session_id, activityPK, cabin_id):
-    if request.method == 'POST':
-        try:
-            if 'submit_all_campers' in request.POST:
-                for camper in Camper.objects.filter(session_cabin=cabin_id):
-                    camper_id = request.POST.get('camper_id_' + str(camper.id))
-                    activity_id = request.POST.get('activity_id_' + str(camper.id))
-                    rainy_day_activity_id = request.POST.get('rainy_day_activity_id_' + str(camper.id))
-                    print("#####  submit_all_campers worked #########")
+    # Make a GET request to the OpenWeatherMap API
+    response = requests.get(f"https://api.openweathermap.org/data/2.5/forecast?lat={lat}&lon={lon}&appid={api_key}")
+
+    # Convert the response to JSON
+    data = response.json()
+
+    # Get the weather data for tomorrow
+    tomorrow_data = data['list'][1]
+
+    return tomorrow_data
+
+
+# def processing(request, session_id, activityPK, cabin_id):
+#     if request.method == 'POST':
+#         if(True):
+#             if 'submit_all_campers' in request.POST:
+#                 for camper in Camper.objects.filter(session_cabin=cabin_id):
+#                     camper_id = request.POST.get('camper_id_' + str(camper.id))
+#                     activity_id = request.POST.get('activity_id_' + str(camper.id))
+#                     rainy_day_activity_id = request.POST.get('rainy_day_activity_id_' + str(camper.id))
+#                     print("#####  submit_all_campers worked #########")
                     
-                    camper = Camper.objects.get(id=camper_id)
-                    activity = Afternoon_Activity.objects.get(id=activity_id)
-                    rainy_day_activity = Afternoon_Activity.objects.get(id=rainy_day_activity_id)
-                    print(camper)
-                    print(activity)
-                    print(rainy_day_activity)
+#                     camper = Camper.objects.get(id=camper_id)
+#                     activity = Afternoon_Activity.objects.get(id=activity_id)
+#                     rainy_day_activity = Afternoon_Activity.objects.get(id=rainy_day_activity_id)
+#                     print(camper)
+#                     print(activity)
+#                     print(rainy_day_activity)
                     
-                    activity.campers.add(camper) ## if this code is ran and camper is not already in that activity then I need to do sports available -1
-                    rainy_day_activity.campers.add(camper)## if this code is ran and camper is not already in that activity then I need to do sports available -1
+#                     if (camper in activity.campers.all()):
+#                         activity.campers.remove(camper)
+#                         activity.spots_left += 1
                     
-                    activity.save()
-                    rainy_day_activity.save()
+#                     if (camper in rainy_day_activity.campers.all()):
+#                         rainy_day_activity.campers.remove(camper)
+#                         rainy_day_activity.spots_left += 1
+                    
+#                     activity.campers.add(camper)
+#                     activity.spots_left -= 1
+#                     rainy_day_activity.campers.add(camper)
+#                     rainy_day_activity.spots_left -= 1
 
-            elif 'submit_one_camper' in request.POST:
-                camper_id = request.POST['submit_one_camper']
-                activity_id = request.POST.get('activity_id_' + str(camper_id))
-                rainy_day_activity_id = request.POST.get('rainy_day_activity_id_' + str(camper_id))
-                print("#####  submit_selected_campers worked #########")
+                    
+#                     activity.save()
+#                     rainy_day_activity.save()
 
-                # Get the camper and activity instances
-                camper = Camper.objects.get(id=camper_id)
-                activity = Afternoon_Activity.objects.get(id=activity_id)
-                rainy_day_activity = Afternoon_Activity.objects.get(id=rainy_day_activity_id)
-                print(camper)
-                print(activity)
-                print(rainy_day_activity)
+#             elif 'submit_one_camper' in request.POST:
+#                 camper_id = request.POST['submit_one_camper']
+#                 activity_id = request.POST.get('activity_id_' + str(camper_id))
+#                 rainy_day_activity_id = request.POST.get('rainy_day_activity_id_' + str(camper_id))
+#                 print("#####  submit_selected_campers worked #########")
 
-                # Link the camper to the activity
-                activity.campers.add(camper)
-                rainy_day_activity.campers.add(camper)
-                print("##### Hello World #########")
+#                 # Get the camper and activity instances
+#                 camper = Camper.objects.get(id=camper_id)
+#                 activity = Afternoon_Activity.objects.get(id=activity_id)
+#                 rainy_day_activity = Afternoon_Activity.objects.get(id=rainy_day_activity_id)
+#                 print(camper)
+#                 print(activity)
+#                 print(rainy_day_activity)
 
-                # Save the activity
-                activity.save()
-                rainy_day_activity.save()
-                print("##### It saved #########")
-            return redirect('afternoon_activity:confirmation', session_id=session_id, activityPK=activityPK, cabin_id=cabin_id)  
-        except Exception:
-            return redirect('afternoon_activity:error', session_id=session_id, activityPK=activityPK, cabin_id=cabin_id)  
+#                 if (camper in activity.campers.all()):
+#                     activity.campers.remove(camper)
+#                     activity.spots_left += 1
+#                 if (camper in rainy_day_activity.campers.all()):
+#                     rainy_day_activity.campers.remove(camper)
+#                     rainy_day_activity.spots_left += 1
+                
+                
+#                 # Link the camper to the activity
+#                 activity.campers.add(camper)
+#                 activity.spots_left -= 1
+#                 rainy_day_activity.campers.add(camper)
+#                 rainy_day_activity.spots_left -= 1
+#                 print("##### Hello World #########")
+
+#                 # Save the activity
+#                 activity.save()
+#                 rainy_day_activity.save()
+#                 print("##### It saved #########")
+#             return redirect('afternoon_activity:confirmation', session_id=session_id, activityPK=activityPK, cabin_id=cabin_id)  
+#         # except Exception:
+#         else:
+#             return redirect('afternoon_activity:error', session_id=session_id, activityPK=activityPK, cabin_id=cabin_id)  
         
           
-def confirmation(request,session_id,activityPK,cabin_id):
-    return render(request, "afternoon_activity/confirmation.html",{"session_id":session_id, "activityPK":activityPK ,"cabin_id":cabin_id})
-def error(request,session_id,activityPK,cabin_id):
-    return render(request, "afternoon_activity/error.html",{"session_id":session_id, "activityPK":activityPK ,"cabin_id":cabin_id})
+# def confirmation(request,session_id,activityPK,cabin_id):
+#     activity_types = Period.objects.all() # Needed for NavBar
+#     url_session_number =  session_id # Needed for NavBar
+
+#     selected_activity=Period.objects.get(pk=activityPK)
+#     session_cabin = SessionCabin.objects.get(session__session_number=session_id, cabin__cabin_number=cabin_id)
+
+#     campers_in_cabin_x = Camper.objects.filter(session_cabin=session_cabin) # List of Campers {Jenny, Joe, Chris}
+    
+#     cabin = Cabin.objects.get(cabin_number=cabin_id) # Cabin Object for that list of cabin_id {Cabin 1} 
+#     list_of_groups_for_that_cabin = cabin.cabins_in_group.all() # List of Groups for that Cabin {All, Seniors}
+#     list_of_activities_for_that_cabin = Afternoon_Activity.objects.filter(allowed_groups__in=list_of_groups_for_that_cabin, period__pk=activityPK) # List of Activities objects for all of those groups {Swimming, Archery}
+    
+#     main_activities = None
+#     rainy_day_activities = None
+#     activity_date= None
+    
+#     if request.method == 'POST':
+#         if  'activity-date' in request.POST:
+#             selected_date = request.POST['activity-date']
+#             # Convert the string to a date object
+#             selected_date = datetime.datetime.strptime(selected_date, '%Y-%m-%d').date()
+#             # Filter the activities based on the selected date
+#             main_activities = list_of_activities_for_that_cabin.filter(date=selected_date, rainy_day=False)
+#             rainy_day_activities = list_of_activities_for_that_cabin.filter(date=selected_date, rainy_day=True)
+#             activity_date=selected_date
+#     return render(request, "afternoon_activity/Cabin.html", {"campers_in_cabin_x": campers_in_cabin_x, "main_activities": main_activities, "rainy_day_activities": rainy_day_activities, "activity_types":activity_types,"url_session_number":url_session_number,"selected_activity":selected_activity, "cabin":cabin, "activity_date":activity_date, "session_id": session_id,
+#     "activityPK": activityPK,
+#     "cabin_id": cabin_id,
+#     "list_of_activities_for_that_cabin":list_of_activities_for_that_cabin})
+# def error(request,session_id,activityPK,cabin_id):
+#     return render(request, "afternoon_activity/error.html",{"session_id":session_id, "activityPK":activityPK ,"cabin_id":cabin_id})

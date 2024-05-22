@@ -17,7 +17,10 @@
           <img class="navbar-logo" style="width: 50px; height: 50px;" src="{% static 'afternoon_activity/img/Camp-T_logo-rounded.png' %}" alt="Camp Transfiguration Logo" />
           Camp Transfiguration
         </a>
-        <a class="navbar-brand order-2" href="#">Weather</a>
+        <a class="navbar-brand order-2">
+          <img src="http://openweathermap.org/img/w/{{ weather_icon }}.png" alt="{{ weather_description }}" />
+          {{ weather }} °C
+        </a>
       </div>
     </nav>
   </div>
@@ -32,15 +35,14 @@
           <div class="card shadow border border-dark bg-light">
             <img src="{% static image_static %}" class="card-img-top" alt="session_{{ session.session_number }}.webp" />
             <div class="card-body">
-              <h5 class="card-title">{{ session }}</h5>
-              <a href="{% url 'afternoon_activity:activity_selection' session_id=session.session_number %}" class="btn btn-primary">Select {{ session }}</a> <ul class="list-group list-group-flush" style="padding-top: 30px;">
+              <h5 class="card-title" style="margin-bottom:10px">{{ session }}</h5>
+              <a href="{% url 'afternoon_activity:activity_selection' session_id=session.session_number %}" class="btn btn-primary">Select {{ session }}</a> <ul class="list-group list-group-flush" style="margin-top: 10px;">
                 <li class="list-group-item bg-light"></li>
+                {% for activity in List_of_activities %}
                 <li class="list-group-item bg-light" style="padding-top: 20px; padding-bottom: 20px;">
-                  <a href="#" class="btn btn-secondary btn-sm">afternoon_activity</a>
+                  <a href="{% url 'afternoon_activity:cabins' session_id=session.session_number activityPK=activity.id %}" class="btn btn-secondary btn-sm">{{activity.period}}</a>
                 </li>
-                <li class="list-group-item bg-light" style="padding-top: 20px; padding-bottom: 20px;">
-                  <a href="#" class="btn btn-secondary btn-sm">morning</a>
-                </li>
+              {% endfor %}
               </ul>
             </div>
           </div>

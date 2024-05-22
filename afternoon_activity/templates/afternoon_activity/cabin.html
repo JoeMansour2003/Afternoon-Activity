@@ -1,8 +1,10 @@
 {% extends './base/base.html' %}
 {% load static %}
+{% load custom_filters %}
+
 
 {% block title %}
-  Cabin
+{{ selected_activity.period }} Cabin: {{cabin_id}}
 {% endblock %}
 
 {% block main_content %}
@@ -11,53 +13,78 @@
     <div class="row">
       {% comment %}Left Side{% endcomment %}
       <div class="col col-8">
-        <label for="activity-date">Select date:</label>
-        <form method="post">
-          <input type="date" id="activity-date" name="activity-date" />
-          {% csrf_token %}
-          <button type="submit" class="btn btn-secondary btn-sm">Update Activities</button>
-        </form>
-        <div class="alert alert-light" style="margin-top: 10px;" role="alert">Current date is {{ activity_date }}</div>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="weather-widget" style="padding-bottom: 10px;">
+                  <h3>Tomorrow's Weather</h3>
+                    <img src="http://openweathermap.org/img/wn/{{ tomorrows_icon }}.png" alt="{{ tomorrows_description }}">
+                    <div class="weather-info">
+                        <h4 class="temperature">{{ tomorrows_weather }} °C</h4>
+                        <span class="description">{{ tomorrows_description }}</span>
+                        <span class="rain-chance"> Chance of rain: {{ tomorrows_rain }}%</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+              <h5>
+                <label for="activity-date">Select date:</label></h5>
+                <form method="post">
+                    <input type="date" id="activity-date" name="activity-date" />
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-secondary btn-sm">Update Activities</button>
+                </form>
+                <div class="alert alert-light" style="margin-top: 10px;" role="alert">Current date is <strong>{{ activity_date }}</strong></div>
+            </div>
+        </div>
         <table class="table table-striped table-primary">
           <thead>
             <tr>
-              <th>Cabin #</th>
+              {% comment %} <th>Cabin #</th> {% endcomment %}
               <th>Camper</th>
               <th>{{ selected_activity.period }}</th>
+              
+              {% if selected_activity.period in periods %}
               <th>Rainy Day Activity</th>
+              {% endif %}
+            
               <th>Submit</th>
             </tr>
           </thead>
           <tbody>
-            <form method="post" action="{% url 'afternoon_activity:processing' session_id=session_id activityPK=activityPK cabin_id=cabin_id %}">
+            {% comment %} <form method="post" > {% endcomment %}
+              {% comment %} action="{% url 'afternoon_activity:processing' session_id=session_id activityPK=activityPK cabin_id=cabin_id %}" {% endcomment %}
               {% csrf_token %}
               {% for camper in campers_in_cabin_x %}
                 <tr>
-                  <td>{{ cabin.cabin_number }}</td>
+                  {% comment %} <td>{{ cabin.cabin_number }}</td> {% endcomment %}
                   <td>{{ camper.first_name }} {{ camper.last_name }}</td>
                   <td>
-                    <select class="form-select" name="activity_id_{{ camper.id }}">
+                    <select class="form-select" data-camper-id="{{ camper.id }}" name="activity_id_{{ camper.id }}">
+                      <option selected disabled hidden>🏕️ Choose Activity</option>
                       {% for activity in main_activities %}
                         <option value="{{ activity.id }}">{{ activity.activity }}</option>
                       {% endfor %}
                     </select>
                   </td>
+                  {% if selected_activity.period in periods %}
                   <td>
-                    <select class="form-select" name="rainy_day_activity_id_{{ camper.id }}">
+                    <select class="form-select" data-camper-id="{{ camper.id }}" name="rainy_day_activity_id_{{ camper.id }}">
+                      <option selected disabled hidden>🌧️ Choose Rainy Day</option>
                       {% for rainy_day_activity in rainy_day_activities %}
                         <option value="{{ rainy_day_activity.id }}">{{ rainy_day_activity.activity }}</option>
                       {% endfor %}
                     </select>
                   </td>
+                  {% endif %}
                   <td>
                     <input type="hidden" name="camper_id_{{ camper.id }}" value="{{ camper.id }}" />
-                    <button type="submit" name="submit_one_camper" value="{{ camper.id }}" class="btn btn-danger">Submit {{ camper.first_name }} {{ camper.last_name }}</button>
+                    <button type="submit" id="submit_one_camper-{{camper.id}}" name="submit_one_camper" value="{{ camper.id }}" class="btn btn-warning">Submit {{ camper.first_name }}</button>
                   </td>
                 </tr>
               {% endfor %}
             </tbody>
           </table>
-              <button type="submit" name="submit_all_campers" class="btn btn-primary btn-lg">Submit All</button>
+              <button type="submit" id="submit_all_campers" name="submit_all_campers" class="btn btn-primary btn-lg">Submit All</button>
             </form>
       </div>
       {% comment %}Right Side{% endcomment %}
@@ -67,48 +94,100 @@
             <tr>
               <th>Activity</th>
               <th>Spots Remaining</th>
+              <th>Live Spots Remaining</th>
             </tr>
           </thead>
           <tbody>
             {% for activity in main_activities %}
-              <tr>
+              <tr id="activity-row-{{ activity.id }}">
                 <td>{{ activity.activity }}</td>
                 <td>{{ activity.spots_left }}</td>
+                <td id="spots-left-{{ activity.id }}">{{ activity.spots_left }}</td>
               </tr>
             {% endfor %}
           </tbody>
+          {% if selected_activity.period in periods %}
           <tbody class="table-warning">
             {% for rainy_day_activity in rainy_day_activities %}
-              <tr>
+              <tr id="activity-row-rainy-day-{{ rainy_day_activity.id }}">
                 <td>{{ rainy_day_activity.activity }}</td>
                 <td>{{ rainy_day_activity.spots_left }}</td>
+                <td id="spots-left-rainy-day-{{ rainy_day_activity.id }}">{{ rainy_day_activity.spots_left }}</td>
               </tr>
             {% endfor %}
+            {% endif %}
           </tbody>
-        </table>
+        </table>          
+        <h5 class="text-secondary">Current Camper Activities</h5>
         <table class="table table-striped table-primary text-center">
           <thead>
-            <tr>
-              <th>Camper</th>
-              <th>Activity</th>
-            </tr>
+              <tr>
+                  <th>Camper</th>
+                  <th>Main Activity</th>
+                  {% if selected_activity.period in periods %}
+                  <th>Rainy Day Activity</th>
+                  {% endif %}
+              </tr>
           </thead>
           <tbody>
-            {% for activity in main_activities %}
-            {% for camper in activity.campers.all %}
-              <tr>
-                <td>{{ camper.first_name }} {{ camper.last_name }}</td>
-                <td>{{ activity.activity }}</td>
-              </tr>
-            {% endfor %}
-          {% endfor %}
+              {% for camper in campers_in_cabin_x %}
+                  <tr>
+                      <td>{{ camper.first_name }} {{ camper.last_name }}</td>
+                      <td>
+                        {% with camper.camper_in_activity|filter_by_date:activity_date as activity_signed_up_for %}
+                        {% with activity_signed_up_for|filter_by_rainy:False as activity_signed_up_for_no_rain %}
+                        {% with activity_signed_up_for|filter_by_rainy:True as activity_signed_up_for_with_rain %}
+
+                        
+                        {% if activity_signed_up_for_no_rain %}
+                        {% for camper_activity_no_rain in activity_signed_up_for_no_rain %}
+                        {{ camper_activity_no_rain.activity }}
+                        {% endfor %}
+                        {% else %}
+                              None
+                          {% endif %}
+                      </td>
+                      {% if selected_activity.period in periods %}
+                      <td>
+                        {% if activity_signed_up_for_with_rain %}
+                        {% for camper_activity_rain in activity_signed_up_for_with_rain %}
+                        {{ camper_activity_rain.activity }}
+                        {%endfor%}                        
+                        {% else %}
+                              None
+                          {% endif %}
+                      </td>
+                      {% endif %}
+                      {% endwith %}
+                      {% endwith %}
+                      {% endwith %}
+                  </tr>
+              {% endfor %}
           </tbody>
-        </table>     
+      </table>  
        </div>
     </div>
+    {% comment %} <div class="toast toast-container position-fixed bottom-0 end-0 p-3" id="success-toast" role="alert" aria-live="assertive" aria-atomic="true">
+      <div class="toast-header">
+        <strong class="me-auto">Success</strong>
+        <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+      </div>
+      <div class="toast-body">
+        Form submitted successfully!
+      </div>
+    </div>
+
+    <div class="toast" id="failure-toast" role="alert" aria-live="assertive" aria-atomic="true">
+      <div class="toast-header">
+        <strong class="me-auto">Failure</strong>
+        <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+      </div>
+      <div class="toast-body">
+        There was an error submitting the form.
+      </div>
+    </div> {% endcomment %}
   </div>
 {% endblock %}
-
 {% block scripts %}
   <script src="{% static 'afternoon_activity/node_modules/bootstrap/dist/js/bootstrap.bundle.min.js' %}"></script>
   <script>
@@ -121,5 +200,60 @@
       let dateString = yyyy + '-' + mm + '-' + dd;
       document.getElementById('activity-date').value = dateString;
     })
+
+    var activityDropdowns = document.querySelectorAll('.form-select[name^="activity_id_"]');
+    var rainyDayActivityDropdowns = document.querySelectorAll('.form-select[name^="rainy_day_activity_id_"]');
+    var submitCamperButtons = document.querySelectorAll('.submit_one_camper'); // change 'submit_one_camper' to the class you use
+    var submitAll = document.getElementById('submit_all_campers');
+
+    function updateSpotsLeft(dropdown, prefix, camperId) {
+      let previousOption = dropdown.options[dropdown.selectedIndex]; // Keep track of the previously selected option
+    
+      dropdown.addEventListener('change', function() {
+        // Increase spots left for the previously selected option by 1
+        if (previousOption.value && !previousOption.disabled) {
+          let previousActivityId = previousOption.value;
+          let previousSpotsLeftCell = document.getElementById('spots-left-' + prefix + previousActivityId);
+          let previousSpotsLeft = parseInt(previousSpotsLeftCell.textContent);
+          previousSpotsLeftCell.textContent = previousSpotsLeft + 1;
+    
+          // Enable the submit button if spots left are more than 0
+          if (previousSpotsLeft + 1 >= 0) {
+            let submitButton = document.getElementById('submit_one_camper-' + camperId);
+            submitButton.disabled = false;
+            submitAll.disabled = false;
+
+          }
+        }
+    
+        // Decrease spots left for the newly selected option by 1
+        let selectedOption = this.options[this.selectedIndex];
+        if (!selectedOption.disabled) {
+          let activityId = selectedOption.value;
+          let spotsLeftCell = document.getElementById('spots-left-' + prefix + activityId);
+          let spotsLeft = parseInt(spotsLeftCell.textContent);
+          spotsLeftCell.textContent = spotsLeft - 1;
+    
+          // Disable the submit button if spots left are less than 0
+          if (spotsLeft - 1 < 0) {
+            let submitButton = document.getElementById('submit_one_camper-' + camperId);
+            submitButton.disabled = true;
+            submitAll.disabled = true;
+          }
+        }
+    
+        // Update the previously selected option
+        previousOption = selectedOption;
+      });
+    }
+    activityDropdowns.forEach(function(dropdown) {
+      let camperId = dropdown.getAttribute('data-camper-id'); // Assuming you've added a 'data-camper-id' attribute to your dropdowns
+      updateSpotsLeft(dropdown, '', camperId);
+    });
+    
+    rainyDayActivityDropdowns.forEach(function(dropdown) {
+      let camperId = dropdown.getAttribute('data-camper-id'); // Assuming you've added a 'data-camper-id' attribute to your dropdowns
+      updateSpotsLeft(dropdown, 'rainy-day-', camperId);
+    });
   </script>
 {% endblock %}

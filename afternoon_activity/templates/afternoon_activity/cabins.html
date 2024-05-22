@@ -1,6 +1,6 @@
 {% extends './base/base.html' %}
 {% block title %}
-  Cabins
+{{ selected_activity.period }} Cabins
 {% endblock %}
 {% block main_content %}
   <div class="text-center">
@@ -18,7 +18,7 @@
         <a class="btn btn-link" href="{% url 'afternoon_activity:cabins' session_id=url_session_number activityPK=activityPK start_cabin_id=1 end_cabin_id=19 %}">If you would like to view all cabins click here</a>
       </p>
     {% else %}
-      <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 justify-content-center align-items-center">
+      <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 justify-content-center">
         {% for cabin in list_of_cabins %}
           <div class="col mb-4 justify-content-center">
             <div class="card shadow border border-dark bg-light">
@@ -26,13 +26,13 @@
                 <h5 class="card-title text-secondary">Cabin {{ cabin.cabin_number }}</h5>
 
                 {% for counselor in cabin.counselors %}
+                <a href="{% url 'afternoon_activity:cabin' session_id=url_session_number activityPK=activityPK cabin_id=cabin.cabin_number %}" class="btn btn-primary">Select Cabin {{ cabin.cabin_number }}</a>
                   {% if counselor.first_name is None %}
 
                   {% else %}
                     <p class="card-text fw-medium text-warning">{{ counselor.first_name }} {{ counselor.last_name }}</p>
                   {% endif %}
                 {% endfor %}
-                <a href="{% url 'afternoon_activity:cabin' session_id=url_session_number activityPK=activityPK cabin_id=cabin.cabin_number %}" class="btn btn-primary">Select Cabin {{ cabin.cabin_number }}</a>
                 {% comment %} <a href="{% url 'afternoon_activity:base' cabin_id=cabin.cabin_number %}" class="btn btn-primary">View Cabin {{ cabin.cabin_number }}</a> {% endcomment %}
               </div>
             </div>

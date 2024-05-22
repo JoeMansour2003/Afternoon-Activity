@@ -2,6 +2,7 @@ from django.contrib.auth.models import User, Group
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.db import models,transaction
+from django.db.models import CheckConstraint, Q
 
 
 class Group(models.Model):
@@ -26,7 +27,7 @@ class Period(models.Model):
     """
     List of period options: {First Period, Second Period, Morning Exercise, Cabin Time Activities} 
     """
-    UNDELETABLE_NAMES = {"First Period"}
+    UNDELETABLE_NAMES = {"First Period", "Second Period"}
     
     def __str__(self):
         return str(self.period)
@@ -43,37 +44,52 @@ def get_first_period():
 def get_default_group():
     return Group.objects.get(group_name="All").id
 
-class Afternoon_Activity(models.Model):
+class ProgramActivity(models.Model):
     """
     This is the Model that is used to create the afternoon activities for that day.
 
     It can be easily searched by sorting by the second_activity boolean field.
     """
     def __str__(self):
-        return str(self.date) + "; " + str(self.period) + "; " + str(self.allowed_groups) + "; Activity: " + str(self.activity)# + " preference: " + str(self.preference)
+        if (self.rainy_day):
+            return str(self.date) + "; " + "Rainy Day " + str(self.period) +  "; Activity: " + str(self.activity) + "; " + str(self.allowed_groups)# + " preference: " + str(self.preference)
+        else:    
+            return str(self.date) + "; " + str(self.period)  + "; Activity: " + str(self.activity) + "; " + str(self.allowed_groups)# + " preference: " + str(self.preference)
     date = models.DateField()
     rainy_day= models.BooleanField(default=False)
     allowed_groups = models.ForeignKey("Group", on_delete=models.CASCADE, related_name="group_for_activity", default=get_default_group())
     period = models.ForeignKey("Period", on_delete=models.CASCADE, related_name="afternoon_activity_period", default=get_first_period())
     activity = models.ForeignKey("Activity", on_delete=models.CASCADE, related_name="afternoon_activity")
-    spots_left = models.IntegerField(help_text="Will be automatically overwritten with 'max_participants' for the activity in question.", null=True, blank=True, default=None) # Set to max_participants in the save function bellow
-    campers = models.ManyToManyField("Camper", related_name="camper_associated_with_activity", blank=True)
-    def save(self, *args, **kwargs):
-        self.spots_left = self.activity.max_participants # No matter what you put in the spots_left field, it will always be the max_participants
-        super().save(*args, **kwargs)
-    
-    # counselor = models.ForeignKey("Counselor", on_delete=models.CASCADE, related_name="counselor_for_activity")
-
-    # group = models.ForeignKey("Group", on_delete=models.CASCADE, related_name="group_for_afternoon_activity")
-    
-    # camper = models.ManyToManyField("Camper", related_name="camper_associated_with_activity")
-        # 1 being the highest priority and 3 being the lowest priority
+    spots_left = models.IntegerField(help_text="Will be automatically overwritten upon creation with 'max_participants' for the activity in question.", null=True, blank=True, default=None) # Set to max_participants in the save function bellow
+    campers = models.ManyToManyField("Camper", related_name="camper_in_activity", blank=True) # through="Afternoon_Activity_Camper",
+            # 1 being the highest priority and 3 being the lowest priority
     # preference = models.IntegerField(default=0)
+    def save(self, *args, **kwargs):
+        if (self.spots_left is None):
+            self.spots_left = self.activity.max_participants # No matter what you put in the spots_left field, it will always be the max_participants
+        if (self.spots_left is not None and self.spots_left < 0):
+            raise ValueError("spots_left cannot be negative") # Double Wammy
+        super().save(*args, **kwargs)
     class Meta:
         constraints = [
+            CheckConstraint(check=Q(spots_left__gte=0), name='spots_left_is_positive'),
             # models.CheckConstraint(check=models.Q(preference__gte=0, preference__lte=3), name='preference_in_range'),
         ]
-# class Campers_Activity_Relation(models.Model):
+    
+class Camper(models.Model):
+    """
+    Camper profile
+    """
+    def __str__(self):
+        return self.first_name + " " + self.last_name
+
+    first_name = models.CharField(max_length=20)
+    last_name = models.CharField(max_length=20)
+    session_cabin = models.ManyToManyField("SessionCabin", related_name="cabin_for_camper")
+    
+    # afternoon_activity = models.ManyToManyField("Afternoon_Activity", related_name="afternoon_activity_selected", null=True, blank=True)
+
+# class Afternoon_Activity_Camper(models.Model):
 #     '''
 #     << THIS IS THE MODEL THAT YOU PRINT >>
     
@@ -94,18 +110,6 @@ class Activity(models.Model):
     activity = models.CharField(max_length=20)
     rainy_day = models.BooleanField(default=False)
     max_participants = models.IntegerField(default=15)
-class Camper(models.Model):
-    """
-    Camper profile
-    """
-    def __str__(self):
-        return self.first_name + " " + self.last_name
-
-    first_name = models.CharField(max_length=20)
-    last_name = models.CharField(max_length=20)
-    session_cabin = models.ManyToManyField("SessionCabin", related_name="cabin_for_camper")
-    
-    # afternoon_activity = models.ManyToManyField("Afternoon_Activity", related_name="afternoon_activity_selected", null=True, blank=True)
 
 class Session(models.Model):
     """
@@ -162,5 +166,5 @@ class Counselor(models.Model):
     email = models.EmailField(max_length=50, unique=True, null=True, blank=True)
     phone_number = models.IntegerField(unique=True, null=True, blank=True)
     sessionCabin = models.ManyToManyField("SessionCabin", related_name="counselors_for_session_cabin", blank=True)
-    afternoon_role = models.ManyToManyField("Afternoon_Activity", related_name="counselor_for_activity", blank=True)
+    afternoon_role = models.ManyToManyField("ProgramActivity", related_name="counselor_for_activity", blank=True)
     
