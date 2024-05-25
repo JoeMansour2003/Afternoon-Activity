@@ -14,6 +14,7 @@ urlpatterns = [
     
     path("<int:session_id>/<int:activityPK>/cabin/<int:cabin_id>/", views.cabin , name="cabin"),
     
+    path("<int:session_id>/<int:activityPK>/activity-sheet", views.activity_sheet, name="activity_sheet"),
     # path('<int:session_id>/<int:activityPK>/cabin/<int:cabin_id>/confirmation/', views.confirmation, name='confirmation'),
     # path("<int:session_id>/<int:activityPK>/cabin/<int:cabin_id>/error/", views.error , name="error"),
     # path("<int:session_id>/<int:activityPK>/cabin/<int:cabin_id>/processing/", views.processing , name="processing"),

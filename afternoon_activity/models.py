@@ -85,7 +85,7 @@ class Camper(models.Model):
 
     first_name = models.CharField(max_length=20)
     last_name = models.CharField(max_length=20)
-    session_cabin = models.ManyToManyField("SessionCabin", related_name="cabin_for_camper")
+    session_cabin = models.ManyToManyField("SessionCabin", related_name="sessioncabin_for_camper")
     
     # afternoon_activity = models.ManyToManyField("Afternoon_Activity", related_name="afternoon_activity_selected", null=True, blank=True)
 

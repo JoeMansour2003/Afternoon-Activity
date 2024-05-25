@@ -51,7 +51,7 @@
             </tr>
           </thead>
           <tbody>
-            {% comment %} <form method="post" > {% endcomment %}
+            <form method="post" >
               {% comment %} action="{% url 'afternoon_activity:processing' session_id=session_id activityPK=activityPK cabin_id=cabin_id %}" {% endcomment %}
               {% csrf_token %}
               {% for camper in campers_in_cabin_x %}
@@ -78,13 +78,12 @@
                   {% endif %}
                   <td>
                     <input type="hidden" name="camper_id_{{ camper.id }}" value="{{ camper.id }}" />
-                    <button type="submit" id="submit_one_camper-{{camper.id}}" name="submit_one_camper" value="{{ camper.id }}" class="btn btn-warning">Submit {{ camper.first_name }}</button>
-                  </td>
+                    <button type="submit" id="submit_one_camper-{{camper.id}}" name="submit_one_camper" value="{{ camper.id }}" class="btn btn-warning submit_one_camper">Submit {{ camper.first_name }}</button>                  </td>
                 </tr>
               {% endfor %}
             </tbody>
           </table>
-              <button type="submit" id="submit_all_campers" name="submit_all_campers" class="btn btn-primary btn-lg">Submit All</button>
+              <button type="submit" id="submit_all_campers" name="submit_all_campers" class="btn btn-primary btn-lg submit_all_campers">Submit All</button>
             </form>
       </div>
       {% comment %}Right Side{% endcomment %}
@@ -118,7 +117,7 @@
             {% endif %}
           </tbody>
         </table>          
-        <h5 class="text-secondary">Current Camper Activities</h5>
+        <h5 class="text-secondary text-center">Current Camper Activities</h5>
         <table class="table table-striped table-primary text-center">
           <thead>
               <tr>
