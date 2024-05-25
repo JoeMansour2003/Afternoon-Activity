@@ -125,7 +125,7 @@ def cabin(request, session_id, activityPK, cabin_id):
             # Get the camper and activity instances
             camper = Camper.objects.get(id=camper_id)
             all_activity = ProgramActivity.objects.all()
-            selected_date = request.POST.get('activity-date', None)
+            selected_date = request.POST.get('activity-date')
             activities_camper_is_currently_enrolled=camper.camper_in_activity.filter(period_id=activityPK,date=selected_date)
             print(camper)
             pprint.pp(all_activity)
