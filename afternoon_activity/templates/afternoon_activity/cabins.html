@@ -4,7 +4,10 @@
 {% endblock %}
 {% block main_content %}
   <div class="text-center">
-    <h1 class="text-danger">{{ selected_activity.period }}</h1>
+    <a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover link-danger" href="{% url 'afternoon_activity:activity_sheet' session_id=url_session_number activityPK=activityPK %}">
+      <h1 class="text-danger">{{ selected_activity.period }}</h1>
+    </a>
+    
     <h2>Cabins</h2>
 
     {% if activityPK not in activity_type_pks %}

@@ -50,7 +50,24 @@ def cabins(request, session_id, activityPK, start_cabin_id=None, end_cabin_id=No
     
     return render(request, "afternoon_activity/Cabins.html", {"list_of_cabins": list_of_cabins, "session_cabins": session_cabins, "activityPK": activityPK, "activity_types": activity_types,"activity_type_pks": activity_type_pks, "url_session_number":url_session_number,"selected_activity":selected_activity})
 
+def activity_sheet(request, session_id, activityPK):
+    activity_types = Period.objects.all() # Needed for NavBar
+    url_session_number =  session_id # Needed for NavBar
+    url_activityPK =  activityPK
+    period = Period.objects.get(pk=activityPK)
+    session_cabins = SessionCabin.objects.filter(session__session_number=session_id)
+    # list_of_cabins = [sc.cabin for sc in session_cabins]
+    current_date = timezone.localtime(timezone.now()).date().strftime('%Y-%m-%d')
+    
+    if request.method == 'POST':
+        selected_date = request.POST.get('activity-date')
+    else:
+        selected_date = current_date
+    selected_date = timezone.datetime.strptime(selected_date, '%Y-%m-%d').date()
+    activities = ProgramActivity.objects.filter(date=selected_date, period=activityPK, rainy_day=False)
+    rainy_day_activities = ProgramActivity.objects.filter(date=selected_date, period=activityPK, rainy_day=True)
 
+    return render(request, "afternoon_activity/activity_sheet.html", {"session_cabins": session_cabins, "activityPK": activityPK, "activity_types": activity_types,"url_session_number":url_session_number, "current_date": current_date, "url_activityPK": url_activityPK, "activities":activities, "rainy_day_activities":rainy_day_activities,"period":period, "selected_date":selected_date})
 
 def cabin(request, session_id, activityPK, cabin_id):
 
@@ -130,8 +147,10 @@ def cabin(request, session_id, activityPK, cabin_id):
             print(camper)
             pprint.pp(all_activity)
             print("##########################")
-            pprint.pp(camper.camper_in_activity.all())
-            pprint.pp(camper.camper_in_activity.filter(period_id=activityPK,date=selected_date))
+            print(activityPK)
+            print(selected_date)
+            pprint.pp(activities_camper_is_currently_enrolled)
+            # pprint.pp(camper.camper_in_activity.filter(period_id=activityPK,date=selected_date))
             print("##########################")
         
             for previous_activity in activities_camper_is_currently_enrolled:
@@ -172,7 +191,7 @@ def cabin(request, session_id, activityPK, cabin_id):
             
         
         if 'activity-date' in request.POST or 'submit_all_campers' in request.POST or 'submit_one_camper' in request.POST:
-            selected_date = request.POST.get('activity-date', None)
+            selected_date = request.POST.get('activity-date')
             if selected_date is not None:
                 # Convert the string to a date object
                 selected_date = datetime.datetime.strptime(selected_date, '%Y-%m-%d').date()
@@ -206,27 +225,3 @@ def get_tomorrows_weather_data():
     tomorrow_data = data['list'][1]
 
     return tomorrow_data
-def activity_sheet(request, session_id, activityPK):
-    activity_types = Period.objects.all() # Needed for NavBar
-    url_session_number =  session_id # Needed for NavBar
-    url_activityPK =  activityPK
-    session_cabins = SessionCabin.objects.filter(session__session_number=session_id)
-    # list_of_cabins = [sc.cabin for sc in session_cabins]
-    current_date = timezone.now().date().strftime('%Y-%m-%d')
-    activities = []
-
-    if request.method == 'POST':
-        selected_date = request.POST.get('activity-date')
-        if selected_date:  # Check if selected_date is not an empty string
-            selected_date = timezone.datetime.strptime(selected_date, '%Y-%m-%d').date()
-            activities = ProgramActivity.objects.filter(date=selected_date, period=selected_period)
-            campers = [activity.campers.all() for activity in activities]
-        else:
-            selected_date = timezone.datetime.strptime(current_date, '%Y-%m-%d').date()
-            activities = ProgramActivity.objects.filter(date=selected_date, period=selected_period)
-            campers = [activity.campers.all() for activity in activities]
-
-    else:
-        campers = []
-
-    return render(request, "afternoon_activity/activity_sheet.html", {"session_cabins": session_cabins, "activityPK": activityPK, "activity_types": activity_types,"url_session_number":url_session_number,"selected_period":selected_period, "campers": campers, "current_date": current_date, "url_activityPK": url_activityPK, "activities":activities})
