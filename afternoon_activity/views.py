@@ -3,9 +3,57 @@ from django.http import JsonResponse
 from django.shortcuts import render,redirect
 from django.utils import timezone
 from .models import ProgramActivity,Activity,Camper,Cabin,Counselor,Group,Session,SessionCabin,Period
-import datetime, requests, os
+from datetime import datetime, timedelta
+import requests, os
 from dotenv import load_dotenv
 
+from django.template.loader import get_template
+from django.http import HttpResponse
+from xhtml2pdf import pisa
+from io import BytesIO
+
+def render_to_pdf(template_src, context_dict={}):
+    template = get_template(template_src)
+    html  = template.render(context_dict)
+    result = BytesIO()
+    pdf = pisa.pisaDocument(BytesIO(html.encode("ISO-8859-1")), result)
+    if not pdf.err:
+        return HttpResponse(result.getvalue(), content_type='application/pdf')
+    return None
+
+def activity_pdf_view(request, activityPK, activity_date):
+    activity_date = datetime.strptime(activity_date, '%Y-%m-%d').date()
+    activities = ProgramActivity.objects.filter(date=activity_date, period=activityPK, rainy_day=False)
+    rainy_day_activities = ProgramActivity.objects.filter(date=activity_date, period=activityPK, rainy_day=True)
+    pdf = render_to_pdf('afternoon_activity/pdf_template.html', {'activities': activities, 'rainy_day_activities': rainy_day_activities})
+    return HttpResponse(pdf, content_type='application/pdf')
+
+def camper_remove_from_old_and_add_to_new_activity(camper, activities_camper_is_currently_enrolled, activity_id, rainy_day_activity_id, selected_date):
+    """
+    Helper function for the Cabin view
+    """
+    # Removing camper from the previously selected activity (This includes the rainy day activity)
+    for previous_activity in activities_camper_is_currently_enrolled:
+        previous_activity.campers.remove(camper)
+        previous_activity.spots_left += 1
+        previous_activity.save()
+        print("We removed " + str(camper) + " from the previous/old activity: " + str(previous_activity))
+        
+    # Adding camper to the newly selected activity
+    if (activity_id is not None):
+        activity = ProgramActivity.objects.get(id=activity_id)
+        activity.campers.add(camper)
+        activity.spots_left -= 1
+        activity.save()
+        print("Camper: "+str(camper)+" is added to the new activity: "+str(activity))
+    
+    # Adding camper to the rainy day activity
+    if (rainy_day_activity_id is not None):
+        rainy_day_activity = ProgramActivity.objects.get(id=rainy_day_activity_id)
+        rainy_day_activity.campers.add(camper)
+        rainy_day_activity.spots_left -= 1
+        rainy_day_activity.save()
+        print("Camper: "+str(camper)+" is added to the rainy day activity: "+str(rainy_day_activity))
 
 def homepage(request):
     sessions= Session.objects.all()
@@ -91,123 +139,78 @@ def cabin(request, session_id, activityPK, cabin_id):
     
     periods = ["First Period", "Second Period"]
 
-    main_activities = None
-    rainy_day_activities = None
-    activity_date= None
     # POST request
     if request.method == 'POST':
+        if 'activity-date' in request.POST:
+            selected_date = request.POST.get('activity-date')
+            selected_date = timezone.datetime.strptime(selected_date, '%Y-%m-%d').date()
+            main_activities = list_of_activities_for_that_cabin.filter(date=selected_date, rainy_day=False)
+            rainy_day_activities = list_of_activities_for_that_cabin.filter(date=selected_date, rainy_day=True)
+            
+        # If we submit 
         if 'submit_all_campers' in request.POST:
             for camper in Camper.objects.filter(session_cabin=cabin_id):
                 camper_id = request.POST.get('camper_id_' + str(camper.id))
                 activity_id = request.POST.get('activity_id_' + str(camper.id))
                 rainy_day_activity_id = request.POST.get('rainy_day_activity_id_' + str(camper.id))
-                selected_date = request.POST.get('activity-date', None)
 
-                print("#####  submit_all_campers worked #########")
+                print("#####  submit_all_campers was clicked #########")
                 
                 camper = Camper.objects.get(id=camper_id)
                 activities_camper_is_currently_enrolled=camper.camper_in_activity.filter(period=activityPK,date=selected_date)
 
-                print(camper)
-                # print(activity)
-                print(rainy_day_activity_id)
-                
+                print("Camper: " + str(camper))
+                print("Is currently enrolled in: ")
+                pprint.pp(activities_camper_is_currently_enrolled)                
 
-                for previous_activity in activities_camper_is_currently_enrolled:
-                    previous_activity.campers.remove(camper)
-                    previous_activity.spots_left += 1
-                    previous_activity.save()
-                    print("we removed the camper from the old activity")
+                camper_remove_from_old_and_add_to_new_activity(camper, activities_camper_is_currently_enrolled, activity_id, rainy_day_activity_id, selected_date)
                     
-                    
-                if (activity_id is not None):
-                    activity = ProgramActivity.objects.get(id=activity_id)
-                    activity.campers.add(camper)
-                    activity.spots_left -= 1
-                    activity.save()
-                    print("### Activity Saved ###")
-                
-                if (rainy_day_activity_id is not None):
-                    rainy_day_activity = ProgramActivity.objects.get(id=rainy_day_activity_id)
-                    rainy_day_activity.campers.add(camper)
-                    rainy_day_activity.spots_left -= 1
-                    rainy_day_activity.save()
-                    print("### Rainy Day Activity Saved ###")
         elif 'submit_one_camper' in request.POST:
             camper_id = request.POST['submit_one_camper']
             activity_id = request.POST.get('activity_id_' + str(camper_id))
             rainy_day_activity_id = request.POST.get('rainy_day_activity_id_' + str(camper_id))
-            print("#####  submit_selected_campers worked #########")
+            print("#### submit_one_camper was clicked ####")
 
             # Get the camper and activity instances
             camper = Camper.objects.get(id=camper_id)
-            all_activity = ProgramActivity.objects.all()
-            selected_date = request.POST.get('activity-date')
             activities_camper_is_currently_enrolled=camper.camper_in_activity.filter(period_id=activityPK,date=selected_date)
-            print(camper)
-            pprint.pp(all_activity)
-            print("##########################")
-            print(activityPK)
-            print(selected_date)
+            print("Camper: " + str(camper))
+            # print(activityPK)
+            # print(selected_date)
+            print("Activates camper: "+str(camper)+" are currently enrolled in: ")
             pprint.pp(activities_camper_is_currently_enrolled)
             # pprint.pp(camper.camper_in_activity.filter(period_id=activityPK,date=selected_date))
             print("##########################")
         
-            for previous_activity in activities_camper_is_currently_enrolled:
-                previous_activity.campers.remove(camper)
-                previous_activity.spots_left += 1
-                previous_activity.save()
-                print("we removed the camper from the activity")
-                
-            if (activity_id is not None):
-                activity = ProgramActivity.objects.get(id=activity_id)
-                activity.campers.add(camper)
-                activity.spots_left -= 1
-                activity.save()
-                print("### Activity Saved ###")
-                
-            if rainy_day_activity_id is not None:
-                rainy_day_activity = ProgramActivity.objects.get(id=rainy_day_activity_id)
-                rainy_day_activity.campers.add(camper)
-                rainy_day_activity.spots_left -= 1
-                rainy_day_activity.save()
-                print("### Rainy Day Activity Saved ###")
-            
-            # Link the camper to the activity
-            if (activity_id is not None):
-                try:
-                    activity.campers.add(camper)
-                    activity.spots_left -= 1
-                except ValueError as e:
-                    print(e)
-                    return JsonResponse({'error': '1 or more camper tried to book an activity that is full. Please choose another activity. Your entry failed to save.'})
-                except Exception as e:
-                    print(e)
-                    return JsonResponse({'error': 'An error occurred. Your entry failed to save.'})
+            camper_remove_from_old_and_add_to_new_activity(camper, activities_camper_is_currently_enrolled, activity_id, rainy_day_activity_id, selected_date)
 
+    else:
+        tomorrow_date = (datetime.now() + timedelta(days=1)).date()
+        selected_date = tomorrow_date
+        main_activities = list_of_activities_for_that_cabin.filter(date=tomorrow_date, rainy_day=False)
+        rainy_day_activities = list_of_activities_for_that_cabin.filter(date=tomorrow_date, rainy_day=True)
 
-            print("##### Hello World #########")
-            
-            
-        
-        if 'activity-date' in request.POST or 'submit_all_campers' in request.POST or 'submit_one_camper' in request.POST:
-            selected_date = request.POST.get('activity-date')
-            if selected_date is not None:
-                # Convert the string to a date object
-                selected_date = datetime.datetime.strptime(selected_date, '%Y-%m-%d').date()
-                # Filter the activities based on the selected date
-                main_activities = list_of_activities_for_that_cabin.filter(date=selected_date, rainy_day=False)
-                rainy_day_activities = list_of_activities_for_that_cabin.filter(date=selected_date, rainy_day=True)
-                activity_date=selected_date
-    return render(request, "afternoon_activity/Cabin.html", {"campers_in_cabin_x": campers_in_cabin_x, "main_activities": main_activities, "rainy_day_activities": rainy_day_activities, "activity_types":activity_types,"url_session_number":url_session_number,"selected_activity":selected_activity, "cabin":cabin, "activity_date":activity_date, "session_id": session_id,
-    "activityPK": activityPK,
-    "cabin_id": cabin_id,
-    "list_of_activities_for_that_cabin":list_of_activities_for_that_cabin,
-    "periods":periods,
-    "tomorrows_weather":tomorrows_weather,
-    "tomorrows_rain":tomorrows_rain,
-    "tomorrows_icon":tomorrows_icon,
-    "tomorrows_description":tomorrows_description})
+    return render(request, "afternoon_activity/Cabin.html", 
+        {
+        "campers_in_cabin_x": campers_in_cabin_x,
+        "main_activities": main_activities,
+        "rainy_day_activities": rainy_day_activities,
+        "activity_types":activity_types,
+        "url_session_number":url_session_number,
+        "selected_activity":selected_activity,
+        "cabin":cabin,
+        "session_id": session_id,
+        "activityPK": activityPK,
+        "cabin_id": cabin_id,
+        "list_of_activities_for_that_cabin":list_of_activities_for_that_cabin,
+        "periods":periods,
+        "tomorrows_weather":tomorrows_weather,
+        "tomorrows_rain":tomorrows_rain,
+        "tomorrows_icon":tomorrows_icon,
+        "tomorrows_description":tomorrows_description,
+        "activity_date": selected_date
+        }
+    )
     
 def get_tomorrows_weather_data():
     load_dotenv()

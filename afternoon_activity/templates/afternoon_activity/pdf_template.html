@@ -1,0 +1,43 @@
+{% for activity in activities %}
+  <div style="page-break-after: always;">
+    <h1>{{ activity.activity }}</h1>
+    <table>
+      <tr>
+        <th>Cabin</th>
+        <th>Camper</th>
+      </tr>
+      {% for camper in activity.campers.all %}
+        <tr>
+          <td>
+            {% for cabin in camper.session_cabin.all %}
+              {{ cabin.cabin.cabin_number }}{% if not forloop.last %}, {% endif %}
+            {% endfor %}
+          </td>
+          <td>{{ camper.first_name }} {{ camper.last_name }}</td>
+        </tr>
+      {% endfor %}
+    </table>
+  </div>
+{% endfor %}
+
+{% for activity in rainy_day_activities %}
+  <div style="page-break-after: always;">
+    <h1>{{ activity.activity }}</h1>
+    <table>
+      <tr>
+        <th>Cabin</th>
+        <th>Camper</th>
+      </tr>
+      {% for camper in activity.campers.all %}
+        <tr>
+          <td>
+            {% for cabin in camper.session_cabin.all %}
+              {{ cabin.cabin.cabin_number }}{% if not forloop.last %}, {% endif %}
+            {% endfor %}
+          </td>
+          <td>{{ camper.first_name }} {{ camper.last_name }}</td>
+        </tr>
+      {% endfor %}
+    </table>
+  </div>
+{% endfor %}

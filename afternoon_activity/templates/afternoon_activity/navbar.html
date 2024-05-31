@@ -8,7 +8,8 @@
     <a class="navbar-brand order-2">
       <img src="http://openweathermap.org/img/w/{{ weather_icon }}.png" alt="{{ weather_description }}">
       {{ weather }} °C
-  </a>    <button class="navbar-toggler" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasNavbar" aria-controls="offcanvasNavbar" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
+  </a>    
+  <button class="navbar-toggler" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasNavbar" aria-controls="offcanvasNavbar" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
     <div class="offcanvas offcanvas-start" tabindex="-1" id="offcanvasNavbar" aria-labelledby="offcanvasNavbarLabel">
       <div class="offcanvas-header" style="background:#ffffe5">
         <h5 class="offcanvas-title" id="offcanvasNavbarLabel" style="background:#ffffe5">
@@ -33,32 +34,6 @@
             <a class="nav-link active" aria-current="page" href="{% url 'afternoon_activity:cabins' session_id=url_session_number activityPK=activity.pk %}">{{activity}}</a>
           </li>
           {% endfor %}
-            
-          {% comment %} <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown" aria-expanded="false">{{session}}</a>
-            <li class="nav-item">
-              <a class="nav-link" href="{% url 'afternoon_activity:cabins' session_id=session.session_number start_cabin_id=1 end_cabin_id=19 %}">All Cabins</a>
-            </li>
-            <ul class="dropdown-menu" style="background:#ffffe5">
-              <h6 class="dropdown-header">Female Cabin</h6>
-              <li>
-                <a class="dropdown-item" href="{% url 'afternoon_activity:cabins' session_id=session.session_number start_cabin_id=5 end_cabin_id=9 %}">Juniors</a>
-              </li>
-              <li>
-                <a class="dropdown-item" href="{% url 'afternoon_activity:cabins' session_id=session.session_number start_cabin_id=1 end_cabin_id=6 %}">Seniors</a>
-  
-              </li>
-            </ul>
-            <ul class="dropdown-menu" style="background:#ffffe5">
-              <h6 class="dropdown-header">Male Cabin</h6>
-              <li>
-                <a class="dropdown-item" href="{% url 'afternoon_activity:cabins' session_id=session.session_number start_cabin_id=15 end_cabin_id=19 %}">Juniors</a>
-              </li>
-              <li>
-                <a class="dropdown-item" href="{% url 'afternoon_activity:cabins' session_id=session.session_number start_cabin_id=11 end_cabin_id=16 %}">Seniors</a>
-              </li>
-          </li> {% endcomment %}
-
         </ul>
       </div>
     </div>

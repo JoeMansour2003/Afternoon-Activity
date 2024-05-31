@@ -20,8 +20,8 @@
                     <img src="http://openweathermap.org/img/wn/{{ tomorrows_icon }}.png" alt="{{ tomorrows_description }}">
                     <div class="weather-info">
                         <h4 class="temperature">{{ tomorrows_weather }} °C</h4>
-                        <span class="description">{{ tomorrows_description }}</span>
-                        <span class="rain-chance"> Chance of rain: {{ tomorrows_rain }}%</span>
+                        <span class="description">{{ tomorrows_description }};</span>
+                        <span class="rain-chance">Chance of rain: {{ tomorrows_rain }}%</span>
                     </div>
                 </div>
             </div>
@@ -165,39 +165,14 @@
       </table>  
        </div>
     </div>
-    {% comment %} <div class="toast toast-container position-fixed bottom-0 end-0 p-3" id="success-toast" role="alert" aria-live="assertive" aria-atomic="true">
-      <div class="toast-header">
-        <strong class="me-auto">Success</strong>
-        <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
-      </div>
-      <div class="toast-body">
-        Form submitted successfully!
-      </div>
-    </div>
-
-    <div class="toast" id="failure-toast" role="alert" aria-live="assertive" aria-atomic="true">
-      <div class="toast-header">
-        <strong class="me-auto">Failure</strong>
-        <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
-      </div>
-      <div class="toast-body">
-        There was an error submitting the form.
-      </div>
-    </div> {% endcomment %}
   </div>
 {% endblock %}
 {% block scripts %}
   <script src="{% static 'afternoon_activity/node_modules/bootstrap/dist/js/bootstrap.bundle.min.js' %}"></script>
   <script>
     document.addEventListener('DOMContentLoaded', (event) => {
-      let tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      let dd = String(tomorrow.getDate()).padStart(2, '0');
-      let mm = String(tomorrow.getMonth() + 1).padStart(2, '0'); //January is 0!
-      let yyyy = tomorrow.getFullYear();
-      let dateString = yyyy + '-' + mm + '-' + dd;
-      document.getElementById('activity-date').value = dateString;
-    })
+      document.getElementById('activity-date').value = "{{ activity_date|date:'Y-m-d' }}";
+      })
 
     var activityDropdowns = document.querySelectorAll('.form-select[name^="activity_id_"]');
     var rainyDayActivityDropdowns = document.querySelectorAll('.form-select[name^="rainy_day_activity_id_"]');
