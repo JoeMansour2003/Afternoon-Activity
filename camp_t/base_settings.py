@@ -30,7 +30,7 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 # else:
 #     DEBUG = True
 
-ALLOWED_HOSTS = ["127.0.0.1","localhost","camp-t-programs.vercel.app",".vercel.app"]
+ALLOWED_HOSTS = ["127.0.0.1","localhost","35.182.190.203",'35.182.190.203', 'ec2-35-182-190-203.ca-central-1.compute.amazonaws.com']
 
 
 
