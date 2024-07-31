@@ -34,7 +34,7 @@ command to drop all tables:
 
 Create Django admin
 
-     python manage.py createsuperuser
+    python3 manage.py createsuperuser
 RUN SERVER 24/7 
     nohup python3 manage.py runserver 0.0.0.0:8000 &
 on the server
