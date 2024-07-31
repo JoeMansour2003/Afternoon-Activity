@@ -208,7 +208,7 @@ def cabin(request, session_id, activityPK, cabin_id):
         main_activities = list_of_activities_for_that_cabin.filter(date=tomorrow_date, rainy_day=False)
         rainy_day_activities = list_of_activities_for_that_cabin.filter(date=tomorrow_date, rainy_day=True)
 
-    return render(request, "afternoon_activity/Cabin.html", 
+    return render(request, "afternoon_activity/cabin.html", 
         {
         "campers_in_cabin_x": campers_in_cabin_x,
         "main_activities": main_activities,
