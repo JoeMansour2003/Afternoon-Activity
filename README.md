@@ -32,7 +32,9 @@ command to drop all tables:
         END LOOP;
     END $$;
 
+Create Django admin
 
+     python manage.py createsuperuser
 RUN SERVER 24/7 
     nohup python3 manage.py runserver 0.0.0.0:8000 &
 on the server
