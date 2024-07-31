@@ -111,7 +111,7 @@ class Activity(models.Model):
     """
     def __str__(self):
         return (str(self.activity))
-    activity = models.CharField(max_length=20)
+    activity = models.CharField(max_length=30)
     rainy_day = models.BooleanField(default=False)
     max_participants = models.IntegerField(default=15)
 
