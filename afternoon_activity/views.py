@@ -112,7 +112,7 @@ def cabins(request, session_id, activityPK, start_cabin_id=None, end_cabin_id=No
         cabin.counselors = [{'first_name': counselor[0], 'last_name': counselor[1]} for counselor in SessionCabin.objects.filter(session__session_number=session_id, cabin=cabin).values_list('counselors_for_session_cabin__first_name', 'counselors_for_session_cabin__last_name')]
 
     
-    return render(request, "afternoon_activity/Cabins.html", {"list_of_cabins": list_of_cabins, "session_cabins": session_cabins, "activityPK": activityPK, "activity_types": activity_types,"activity_type_pks": activity_type_pks, "url_session_number":url_session_number,"selected_activity":selected_activity})
+    return render(request, "afternoon_activity/cabins.html", {"list_of_cabins": list_of_cabins, "session_cabins": session_cabins, "activityPK": activityPK, "activity_types": activity_types,"activity_type_pks": activity_type_pks, "url_session_number":url_session_number,"selected_activity":selected_activity})
 
 @login_required
 def activity_sheet(request, session_id, activityPK):
