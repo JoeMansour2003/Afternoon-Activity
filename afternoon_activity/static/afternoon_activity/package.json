@@ -1,4 +1,21 @@
 {
+  "name": "camp_t",
+  "version": "1.0.0",
+  "description": "camp t afternoon website",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JoeMansour2003/Afternoon-Activity.git"
+  },
+  "author": "Joe Mansour",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/JoeMansour2003/Afternoon-Activity/issues"
+  },
+  "homepage": "https://github.com/JoeMansour2003/Afternoon-Activity#readme",
   "dependencies": {
     "bootstrap": "^5.3.3"
   }
