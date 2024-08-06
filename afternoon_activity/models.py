@@ -21,8 +21,8 @@ class Group(models.Model):
         if self.group_name in self.UNDELETABLE_NAMES:
             return
         super().delete(*args, **kwargs)
-    group_name = models.CharField(max_length=30, null=True, blank=True) # Seniors, Juniors, All
-    group = models.ManyToManyField("Cabin", related_name="cabins_in_group", blank=True)
+    group_name = models.CharField(max_length=30) # Seniors, Juniors, All
+    group = models.ManyToManyField("Cabin", related_name="cabins_in_group")
 class Period(models.Model):
     """
     List of period options: {First Period, Second Period, Morning Exercise, Cabin Time Activities} 
@@ -38,11 +38,11 @@ class Period(models.Model):
         super().delete(*args, **kwargs)
     period = models.CharField(max_length=30)
     
-# def get_first_period():
-#     return Period.objects.get(period="First Period").id
+def get_first_period():
+    return Period.objects.get(period="First Period").id
 
-# def get_default_group():
-#     return Group.objects.get(group_name="All").id
+def get_default_group():
+    return Group.objects.get(group_name="All").id
 
 class ProgramActivity(models.Model):
     """
@@ -61,8 +61,8 @@ class ProgramActivity(models.Model):
             return str(self.date) + "; " + str(self.period)  + "; Activity: " + str(self.activity) + "; " + str(self.allowed_groups)# + " preference: " + str(self.preference)
     date = models.DateField()
     rainy_day= models.BooleanField(default=False)
-    allowed_groups = models.ForeignKey("Group", on_delete=models.CASCADE, related_name="group_for_activity",null=True, blank=True)# default=get_default_group()
-    period = models.ForeignKey("Period", on_delete=models.CASCADE, related_name="afternoon_activity_period",null=True, blank=True)# default=get_first_period())
+    allowed_groups = models.ForeignKey("Group", on_delete=models.CASCADE, related_name="group_for_activity",default=get_default_group())
+    period = models.ForeignKey("Period", on_delete=models.CASCADE, related_name="afternoon_activity_period",default=get_first_period())
     activity = models.ForeignKey("Activity", on_delete=models.CASCADE, related_name="afternoon_activity")
     spots_left = models.IntegerField(help_text="Will be automatically overwritten upon creation with 'max_participants' for the activity in question.", null=True, blank=True, default=None) # Set to max_participants in the save function bellow
     campers = models.ManyToManyField("Camper", related_name="camper_in_activity", blank=True) # through="Afternoon_Activity_Camper",
@@ -89,7 +89,7 @@ class Camper(models.Model):
 
     first_name = models.CharField(max_length=20)
     last_name = models.CharField(max_length=20)
-    session_cabin = models.ManyToManyField("SessionCabin", related_name="sessioncabin_for_camper", blank=True)
+    session_cabin = models.ManyToManyField("SessionCabin", related_name="sessioncabin_for_camper")
     
     # afternoon_activity = models.ManyToManyField("Afternoon_Activity", related_name="afternoon_activity_selected", null=True, blank=True)
 
@@ -121,7 +121,7 @@ class Session(models.Model):
     """
     def __str__(self):
         return "Session: " + str(self.session_number)
-    session_number = models.IntegerField(null=True, blank=True) #primary_key=True
+    session_number = models.IntegerField() #primary_key=True
     # camper = models.ForeignKey("Camper", on_delete=models.CASCADE, related_name="camper_in_cabin", null=True, blank=True)
     # counselor = models.ForeignKey("Counselor", on_delete=models.CASCADE, related_name="counselor_in_cabin", null=True, blank=True)
 class Cabin(models.Model):
