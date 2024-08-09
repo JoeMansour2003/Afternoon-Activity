@@ -167,7 +167,7 @@ def cabin(request, session_id, activityPK, cabin_id):
             
         # If we submit 
         if 'submit_all_campers' in request.POST:
-            for camper in Camper.objects.filter(session_cabin=cabin_id):
+            for camper in campers_in_cabin_x:
                 camper_id = request.POST.get('camper_id_' + str(camper.id))
                 activity_id = request.POST.get('activity_id_' + str(camper.id))
                 rainy_day_activity_id = request.POST.get('rainy_day_activity_id_' + str(camper.id))
