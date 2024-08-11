@@ -140,6 +140,7 @@ class SessionCabin(models.Model):
         return f"Session: {self.session.session_number}, Cabin: {self.cabin.cabin_number}"
     session = models.ForeignKey(Session, on_delete=models.CASCADE)
     cabin = models.ForeignKey(Cabin, on_delete=models.CASCADE)
+    # year = models.IntegerField(default=2024, null= True, blank=True)
 
 @transaction.atomic
 def populate_session_cabin():
