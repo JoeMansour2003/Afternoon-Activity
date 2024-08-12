@@ -139,7 +139,11 @@
                         
                         {% if activity_signed_up_for_no_rain %}
                         {% for camper_activity_no_rain in activity_signed_up_for_no_rain %}
-                        {{ camper_activity_no_rain.activity }}
+                        {%if forloop.counter0 == 0 %}
+                        <div class="text-danger">{{ camper_activity_no_rain.activity }}</div>
+                        {% else %}
+                        <div class="text-secondary">{{ camper_activity_no_rain.activity }}</div>
+                        {% endif %}
                         {% endfor %}
                         {% else %}
                               None
@@ -148,8 +152,12 @@
                       {% if selected_activity.period in periods %}
                       <td>
                         {% if activity_signed_up_for_with_rain %}
-                        {% for camper_activity_rain in activity_signed_up_for_with_rain %}
-                        {{ camper_activity_rain.activity }}
+                        {% for camper_activity_rain in activity_signed_up_for_with_rain%}
+                        {% if forloop.counter0 == 0  %}
+                        <div class="text-danger">{{ camper_activity_rain.activity }}</div>
+                        {% else %}
+                        <div class="text-secondary">{{ camper_activity_rain.activity }}</div>
+                        {% endif %}
                         {%endfor%}                        
                         {% else %}
                               None
