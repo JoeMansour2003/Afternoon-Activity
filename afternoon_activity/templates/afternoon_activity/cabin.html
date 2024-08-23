@@ -138,30 +138,38 @@
 
                         
                         {% if activity_signed_up_for_no_rain %}
-                        {% for camper_activity_no_rain in activity_signed_up_for_no_rain %}
-                        {%if forloop.counter0 == 0 %}
-                        <div class="text-danger">{{ camper_activity_no_rain.activity }}</div>
-                        {% else %}
-                        <div class="text-secondary">{{ camper_activity_no_rain.activity }}</div>
-                        {% endif %}
-                        {% endfor %}
-                        {% else %}
-                              None
-                          {% endif %}
+                        {% with activity_signed_up_for_no_rain|dictsort:"period.period" as sorted_activities %}
+                            {% for camper_activity_no_rain in sorted_activities %}
+                                {% if camper_activity_no_rain.period.period == "First Period" %}
+                                    <div class="text-danger">First: <strong>{{ camper_activity_no_rain.activity }}</strong></div>
+                                {% elif camper_activity_no_rain.period.period == "Second Period" %}
+                                    <div class="text-secondary">Second: <strong>{{ camper_activity_no_rain.activity }}</strong></div>
+                                {% else %}
+                                    <div>{{ camper_activity_no_rain.activity }}</div>
+                                {% endif %}
+                            {% endfor %}
+                        {% endwith %}
+                    {% else %}
+                        None
+                    {% endif %}
                       </td>
                       {% if selected_activity.period in periods %}
                       <td>
                         {% if activity_signed_up_for_with_rain %}
-                        {% for camper_activity_rain in activity_signed_up_for_with_rain%}
-                        {% if forloop.counter0 == 0  %}
-                        <div class="text-danger">{{ camper_activity_rain.activity }}</div>
-                        {% else %}
-                        <div class="text-secondary">{{ camper_activity_rain.activity }}</div>
-                        {% endif %}
-                        {%endfor%}                        
-                        {% else %}
-                              None
-                          {% endif %}
+                        {% with activity_signed_up_for_no_rain|dictsort:"period.period" as sorted_activities %}
+                        {% for camper_activity_with_rain in sorted_activities %}
+                            {% if camper_activity_with_rain.period.period == "First Period" %}
+                                <div class="text-danger">First: <strong>{{ camper_activity_with_rain.activity }}</strong></div>
+                            {% elif camper_activity_with_rain.period.period == "Second Period" %}
+                                <div class="text-secondary">Second: <strong>{{ camper_activity_with_rain.activity }} </strong> </div>
+                            {% else %}
+                                <div>{{ camper_activity_with_rain.activity }}</div>
+                            {% endif %}
+                        {% endfor %}
+                        {% endwith %}
+                    {% else %}
+                        None
+                    {% endif %}
                       </td>
                       {% endif %}
                       {% endwith %}
