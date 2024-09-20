@@ -1,17 +1,26 @@
-This is the Afternoon Activity website for Camp Transfiguration
+# Afternoon Activity Website for Camp Transfiguration
 
 The goal is to simplify and automate the way campers receive and pick afternoon activities.
 
-### SuperUser info:
 
-Username:
-admin
-<br>
-Password:
-campt
-<br>
-Email:
-joemansour2003@gmail.com
+### Camp Transfiguration Afternoon Activity Site 
+[http://staff.camptransfiguration.org](http://staff.camptransfiguration.org)
+
+### Camp Transfiguration Site
+[https://www.camptransfiguration.org](https://www.camptransfiguration.org)
+
+## Activity Selector Page
+<img width="1440" alt="image" src="https://github.com/user-attachments/assets/0cff979e-c708-4157-b458-601f13f4534e">
+
+## Cabin View Page
+<img width="1352" alt="Screenshot 2024-09-20 at 7 00 29 PM" src="https://github.com/user-attachments/assets/c8eb348d-0721-4d74-b25b-d9df054b8e70">
+
+## Camper Activity Selection Page
+<img width="987" alt="Screenshot 2024-09-20 at 7 05 41 PM" src="https://github.com/user-attachments/assets/61a9d6ba-c58d-4e3f-ba03-480a880dd804">
+<img width="302" alt="Screenshot 2024-09-20 at 7 07 20 PM" src="https://github.com/user-attachments/assets/b59505cc-d697-4f10-bdd5-39a7ce7d4acf">
+
+## Campers For Selected Activity View
+<img width="1330" alt="Screenshot 2024-09-20 at 7 10 09 PM" src="https://github.com/user-attachments/assets/cea87a21-1470-4e8f-8b58-71a4dff20583">
 
 
 # Dev Notes
