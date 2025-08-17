@@ -4,17 +4,7 @@
     {
       "src": "camp_t/wsgi.py",
       "use": "@vercel/python",
-      "config": {
-        "maxLambdaSize": "15mb",
-        "runtime": "python3.11"
-      }
-    },
-    {
-      "src": "build_files.sh",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "staticfiles"
-      }
+      "config": { "maxLambdaSize": "15mb", "runtime": "python3.11" }
     }
   ],
   "routes": [
