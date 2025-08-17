@@ -6,7 +6,6 @@ afternoon_activity/static/afternoon_activity/node_modules
 .DS_Store
 ../.DS_Store
 .env
-staticfiles
 django
 
 afternoon_activity/.DS_Store
