@@ -7,7 +7,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
         # Load the Excel file
-        df = pd.read_excel('/Users/joe/Desktop/Afternoon Activity/camp_t/campers.xlsx')
+        df = pd.read_excel('/Users/joe/Desktop/Capstone/Afternoon-Activity/afternoon_activity/campers.xlsx')
 
         # Retrieve the SessionCabin instance for session 1, cabin 1
         

@@ -19,4 +19,12 @@ urlpatterns = [
     
     path('<int:activityPK>/<str:activity_date>/', views.activity_pdf_view, name='activity_pdf'),
     path("login/", views.login_view, name="login"),
+    
+    path("cabin-sheets/<int:session_id>/<str:activity_date>/<int:activityPK>/", views.cabin_sheets, name="cabin_sheets"),
+        path(
+        "cabin-activities-pdf/<int:session_id>/<str:activity_date>/<int:activityPK>/",
+        views.cabin_activities_pdf,
+        name="cabin_activities_pdf",
+    ),
+
 ]

@@ -1,6 +1,6 @@
 import pprint
 from django.http import JsonResponse
-from django.shortcuts import render,redirect
+from django.shortcuts import render,redirect,get_object_or_404
 from django.utils import timezone
 from .models import ProgramActivity,Activity,Camper,Cabin,Counselor,Group,Session,SessionCabin,Period
 from datetime import datetime, timedelta
@@ -8,6 +8,7 @@ import requests, os
 from dotenv import load_dotenv
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login
+from django.db.models import Q
 
 from django.template.loader import get_template
 from django.http import HttpResponse
@@ -26,21 +27,66 @@ def login_view(request):
             return render(request, "afternoon_activity/login.html", {"failed_login":True})
     return render(request, "afternoon_activity/login.html")
 
-def render_to_pdf(template_src, context_dict={}):
+def render_to_pdf(template_src, context_dict):
+    """Render a Django template to PDF bytes using xhtml2pdf."""
     template = get_template(template_src)
-    html  = template.render(context_dict)
+    html = template.render(context_dict)
     result = BytesIO()
-    pdf = pisa.pisaDocument(BytesIO(html.encode("ISO-8859-1")), result)
-    if not pdf.err:
-        return HttpResponse(result.getvalue(), content_type='application/pdf')
-    return None
+    pisa_status = pisa.CreatePDF(src=html, dest=result, encoding="utf-8")
+    if pisa_status.err:
+        return None
+    return result.getvalue()
 
 def activity_pdf_view(request, activityPK, activity_date):
     activity_date = datetime.strptime(activity_date, '%Y-%m-%d').date()
-    activities = ProgramActivity.objects.filter(date=activity_date, period=activityPK, rainy_day=False)
-    rainy_day_activities = ProgramActivity.objects.filter(date=activity_date, period=activityPK, rainy_day=True)
-    pdf = render_to_pdf('afternoon_activity/pdf_template.html', {'activities': activities, 'rainy_day_activities': rainy_day_activities})
-    return HttpResponse(pdf, content_type='application/pdf')
+
+    base_qs = (
+        ProgramActivity.objects
+        .filter(date=activity_date, period=activityPK)
+        .select_related('activity')
+        .prefetch_related('campers__session_cabin__cabin')
+    )
+    sunny_qs = base_qs.filter(rainy_day=False).order_by('activity__activity')
+    rainy_qs = base_qs.filter(rainy_day=True).order_by('activity__activity')
+
+    def build_blocks(qs, is_rainy):
+        blocks = []
+        for pa in qs:
+            rows = []
+            for camper in pa.campers.all():
+                scs = getattr(camper, "session_cabin").all()
+                cabins = [sc.cabin.cabin_number for sc in scs if getattr(sc, "cabin", None)]
+                cabin_num = min(cabins) if cabins else ""
+                rows.append({"cabin_number": cabin_num, "first_name": camper.first_name, "last_name": camper.last_name})
+            rows.sort(key=lambda r: (
+                r["cabin_number"] if r["cabin_number"] != "" else 10**9,
+                r["last_name"], r["first_name"]
+            ))
+            campers_count = len(rows)
+            spots_left = pa.spots_left if pa.spots_left is not None else None
+            max_capacity = (campers_count + spots_left) if spots_left is not None else None
+            blocks.append({
+                "pa": pa,
+                "rows": rows,
+                "is_rainy": is_rainy,
+                "campers_count": campers_count,
+                "spots_left": spots_left,
+                "max_capacity": max_capacity,
+            })
+        return blocks
+
+    sunny_blocks = build_blocks(sunny_qs, False)
+    rainy_blocks = build_blocks(rainy_qs, True)
+    all_blocks = sunny_blocks + rainy_blocks
+
+    # Distribute into 3 independent columns to avoid row-coupled whitespace
+    columns = [all_blocks[0::3], all_blocks[1::3], all_blocks[2::3]]
+
+    pdf_bytes = render_to_pdf(
+        "afternoon_activity/pdf_template.html",
+        {"activity_date": activity_date, "columns": columns}
+    )
+    return HttpResponse(pdf_bytes, content_type="application/pdf")
 
 def camper_remove_from_old_and_add_to_new_activity(camper, activities_camper_is_currently_enrolled, activity_id, rainy_day_activity_id, selected_date):
     """
@@ -246,3 +292,133 @@ def get_tomorrows_weather_data():
     tomorrow_data = data['list'][1]
 
     return tomorrow_data
+
+def cabin_sheets(request, session_id, activity_date, activityPK):
+    """
+    Printable per-cabin sheets for a single period and date.
+    Only activities in the selected period are listed (Sunny/Rainy).
+    """
+    date_obj = datetime.strptime(activity_date, "%Y-%m-%d").date()
+    period = get_object_or_404(Period, pk=activityPK)
+
+    # Cabins in this session
+    session_cabins = (
+        SessionCabin.objects
+        .filter(session__session_number=session_id)
+        .select_related("cabin", "session")
+        .order_by("cabin__cabin_number")
+    )
+
+    # Whether to show rainy column
+    show_rainy = ProgramActivity.objects.filter(
+        date=date_obj, period=period, rainy_day=True
+    ).exists()
+
+    # Labels
+    period_label = getattr(period, "period", str(period))
+    period_short = period_label.split()[0] if " " in period_label else period_label
+
+    # Build blocks per cabin with camper rows (same logic as cabin_activities_pdf)
+    blocks = []
+    for sc in session_cabins:
+        campers = Camper.objects.filter(session_cabin=sc).distinct()  # Camper.Meta.ordering applies
+
+        rows = []
+        for camper in campers:
+            main_pa = (
+                ProgramActivity.objects
+                .filter(date=date_obj, period=period, rainy_day=False, campers=camper)
+                .select_related("activity")
+                .first()
+            )
+            rainy_pa = (
+                ProgramActivity.objects
+                .filter(date=date_obj, period=period, rainy_day=True, campers=camper)
+                .select_related("activity")
+                .first()
+                if show_rainy else None
+            )
+
+            rows.append({
+                "first_name": camper.first_name,
+                "last_name": camper.last_name,
+                "main_text": f"{period_short}: {main_pa.activity.activity}" if main_pa else "None",
+                "rainy_text": (f"{period_short}: {rainy_pa.activity.activity}" if rainy_pa else "None") if show_rainy else "",
+            })
+
+        blocks.append({"cabin_number": sc.cabin.cabin_number, "rows": rows})
+
+    # Two independent columns for print layout
+    columns = [blocks[0::2], blocks[1::2]]
+
+    return render(
+        request,
+        "afternoon_activity/consollor_cabin_sheets.html",
+        {
+            "activity_date": date_obj,
+            "period": period_label,
+            "show_rainy": show_rainy,
+            "columns": columns,
+        },
+    )
+
+def cabin_activities_pdf(request, session_id, activity_date, activityPK):
+    """
+    Sign-up sheets PDF for all cabins for a given session, date, and period.
+    Uses template: afternoon_activity/Signup_Sheets.html
+    """
+    date_obj = datetime.strptime(activity_date, "%Y-%m-%d").date()
+    period = get_object_or_404(Period, pk=activityPK)
+    period_label = getattr(period, "period", str(period))
+
+    # All cabins in this session ordered by cabin number
+    session_cabins = (
+        SessionCabin.objects
+        .filter(session__session_number=session_id)
+        .select_related("cabin", "session")
+        .order_by("cabin__cabin_number")
+    )
+
+    cabin_blocks = []
+    for sc in session_cabins:
+        cabin = sc.cabin
+
+        # Campers in this cabin (Camper.Meta.ordering -> first_name, last_name)
+        campers = (
+            Camper.objects
+            .filter(session_cabin=sc)
+            .distinct()
+        )
+
+        # Activities visible to this cabin on that date and period
+        groups_qs = cabin.cabins_in_group.all()
+        visible = (
+            ProgramActivity.objects
+            .filter(date=date_obj, period=period, allowed_groups__in=groups_qs)
+            .select_related("activity", "allowed_groups")
+            .distinct()
+        )
+        sunny_activities = visible.filter(rainy_day=False).order_by("activity__activity")
+        rainy_activities = visible.filter(rainy_day=True).order_by("activity__activity")
+
+        cabin_blocks.append({
+            "cabin": cabin,
+            "campers": list(campers),
+            "sunny_activities": list(sunny_activities),
+            "rainy_activities": list(rainy_activities),
+        })
+
+    context = {
+        "activity_date": date_obj,
+        "period": period_label,
+        "cabin_blocks": cabin_blocks,
+    }
+
+    # IMPORTANT: correct template name and context expected by it
+    pdf_bytes = render_to_pdf("afternoon_activity/Signup_Sheets.html", context)
+
+    # If PDF engine fails, render HTML so you can see errors in the browser
+    if not pdf_bytes:
+        return render(request, "afternoon_activity/Signup_Sheets.html", context)
+
+    return HttpResponse(pdf_bytes, content_type="application/pdf")

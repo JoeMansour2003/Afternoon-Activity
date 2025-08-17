@@ -1,4 +1,5 @@
 {% extends './base/base.html' %}
+{% load custom_filters %}
 {% block title %}
   {{ period }} Camper List
 {% endblock %}
@@ -11,12 +12,19 @@
       <input type="date" id="activity-date" name="activity-date" value="{{ current_date }}" />
       <button type="submit" class="btn btn-primary btn-sm">Update List</button>
     </form>
-      <form method="get" action="{% url 'afternoon_activity:activity_pdf' activityPK=url_activityPK activity_date=selected_date %}">
-        <button type="submit" class="btn btn-secondary">Generate PDF</button>
+    <form method="get" action="{% url 'afternoon_activity:activity_pdf' activityPK=url_activityPK activity_date=selected_date %}">
+      <button type="submit" class="btn btn-secondary">Activity Leader Sheets</button>
+    </form>
+        <form method="get" action="{% url 'afternoon_activity:cabin_activities_pdf' session_id=url_session_number activity_date=selected_date activityPK=url_activityPK %}">
+      <button type="submit" class="btn btn-info">Sign up Sheets</button>
+    </form>
+<form method="get" action="{% url 'afternoon_activity:cabin_sheets' session_id=url_session_number activity_date=selected_date activityPK=url_activityPK %}">
+      <button type="submit" class="btn btn-success">Counselors Cabin Sheets</button>
     </form>
     <div class="alert alert-light" style="margin-top: 10px;" role="alert">
       Current date is <strong>{{ selected_date }}</strong>
     </div>
+
     {% for activity in activities %}
       <h1>{{ activity.activity }}</h1>
       <table class="table table-striped table-primary text-center">
@@ -27,13 +35,9 @@
           </tr>
         </thead>
         <tbody>
-          {% for camper in activity.campers.all %}
+          {% for camper in activity.campers.all|sort_by_primary_cabin:url_session_number %}
             <tr>
-              <td>
-                {% for cabin in camper.session_cabin.all %}
-                  {{ cabin.cabin.cabin_number }}{% if not forloop.last %}, {% endif %}
-                {% endfor %}
-              </td>
+              <td>{{ camper|primary_cabin:url_session_number }}</td>
               <td>{{ camper.first_name }} {{ camper.last_name }}</td>
             </tr>
           {% endfor %}
@@ -51,13 +55,9 @@
           </tr>
         </thead>
         <tbody>
-          {% for camper in activity.campers.all %}
+          {% for camper in activity.campers.all|sort_by_primary_cabin:url_session_number %}
             <tr>
-              <td>
-                {% for cabin in camper.session_cabin.all %}
-                  {{ cabin.cabin.cabin_number }}{% if not forloop.last %}, {% endif %}
-                {% endfor %}
-              </td>
+              <td>{{ camper|primary_cabin:url_session_number }}</td>
               <td>{{ camper.first_name }} {{ camper.last_name }}</td>
             </tr>
           {% endfor %}

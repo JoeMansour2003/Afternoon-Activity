@@ -84,6 +84,8 @@ class Camper(models.Model):
     """
     Camper profile
     """
+    class Meta:
+        ordering = ["first_name", "last_name"]  # global default: First, then Last
     def __str__(self):
         return self.first_name + " " + self.last_name
 
