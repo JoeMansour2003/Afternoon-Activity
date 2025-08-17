@@ -3,5 +3,5 @@ print("Production")
 SESSION_COOKIE_SECURE = False
 CSRF_COOKIE_SECURE = False
 SECURE_SSL_REDIRECT = False
-DEBUG = False
+DEBUG = True
 # SECURE_HSTS_SECONDS = 
