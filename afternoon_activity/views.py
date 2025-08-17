@@ -37,57 +37,6 @@ def render_to_pdf(template_src, context_dict):
         return None
     return result.getvalue()
 
-def activity_pdf_view(request, activityPK, activity_date):
-    activity_date = datetime.strptime(activity_date, '%Y-%m-%d').date()
-
-    base_qs = (
-        ProgramActivity.objects
-        .filter(date=activity_date, period=activityPK)
-        .select_related('activity')
-        .prefetch_related('campers__session_cabin__cabin')
-    )
-    sunny_qs = base_qs.filter(rainy_day=False).order_by('activity__activity')
-    rainy_qs = base_qs.filter(rainy_day=True).order_by('activity__activity')
-
-    def build_blocks(qs, is_rainy):
-        blocks = []
-        for pa in qs:
-            rows = []
-            for camper in pa.campers.all():
-                scs = getattr(camper, "session_cabin").all()
-                cabins = [sc.cabin.cabin_number for sc in scs if getattr(sc, "cabin", None)]
-                cabin_num = min(cabins) if cabins else ""
-                rows.append({"cabin_number": cabin_num, "first_name": camper.first_name, "last_name": camper.last_name})
-            rows.sort(key=lambda r: (
-                r["cabin_number"] if r["cabin_number"] != "" else 10**9,
-                r["last_name"], r["first_name"]
-            ))
-            campers_count = len(rows)
-            spots_left = pa.spots_left if pa.spots_left is not None else None
-            max_capacity = (campers_count + spots_left) if spots_left is not None else None
-            blocks.append({
-                "pa": pa,
-                "rows": rows,
-                "is_rainy": is_rainy,
-                "campers_count": campers_count,
-                "spots_left": spots_left,
-                "max_capacity": max_capacity,
-            })
-        return blocks
-
-    sunny_blocks = build_blocks(sunny_qs, False)
-    rainy_blocks = build_blocks(rainy_qs, True)
-    all_blocks = sunny_blocks + rainy_blocks
-
-    # Distribute into 3 independent columns to avoid row-coupled whitespace
-    columns = [all_blocks[0::3], all_blocks[1::3], all_blocks[2::3]]
-
-    pdf_bytes = render_to_pdf(
-        "afternoon_activity/pdf_template.html",
-        {"activity_date": activity_date, "columns": columns}
-    )
-    return HttpResponse(pdf_bytes, content_type="application/pdf")
-
 def camper_remove_from_old_and_add_to_new_activity(camper, activities_camper_is_currently_enrolled, activity_id, rainy_day_activity_id, selected_date):
     """
     Helper function for the Cabin view
@@ -361,6 +310,56 @@ def cabin_sheets(request, session_id, activity_date, activityPK):
             "columns": columns,
         },
     )
+def activity_pdf_view(request, activityPK, activity_date):
+    activity_date = datetime.strptime(activity_date, '%Y-%m-%d').date()
+
+    base_qs = (
+        ProgramActivity.objects
+        .filter(date=activity_date, period=activityPK)
+        .select_related('activity')
+        .prefetch_related('campers__session_cabin__cabin')
+    )
+    sunny_qs = base_qs.filter(rainy_day=False).order_by('activity__activity')
+    rainy_qs = base_qs.filter(rainy_day=True).order_by('activity__activity')
+
+    def build_blocks(qs, is_rainy):
+        blocks = []
+        for pa in qs:
+            rows = []
+            for camper in pa.campers.all():
+                scs = getattr(camper, "session_cabin").all()
+                cabins = [sc.cabin.cabin_number for sc in scs if getattr(sc, "cabin", None)]
+                cabin_num = min(cabins) if cabins else ""
+                rows.append({"cabin_number": cabin_num, "first_name": camper.first_name, "last_name": camper.last_name})
+            # sort by cabin, then First Name, then Last Name
+            rows.sort(key=lambda r: (
+                r["cabin_number"] if r["cabin_number"] != "" else 10**9,
+                r["first_name"], r["last_name"]
+            ))
+            campers_count = len(rows)
+            spots_left = pa.spots_left if pa.spots_left is not None else None
+            max_capacity = (campers_count + spots_left) if spots_left is not None else None
+            blocks.append({
+                "pa": pa,
+                "rows": rows,
+                "is_rainy": is_rainy,
+                "campers_count": campers_count,
+                "spots_left": spots_left,
+                "max_capacity": max_capacity,
+            })
+        return blocks
+
+    sunny_blocks = build_blocks(sunny_qs, False)
+    rainy_blocks = build_blocks(rainy_qs, True)
+    all_blocks = sunny_blocks + rainy_blocks
+
+    pdf_bytes = render_to_pdf(
+        "afternoon_activity/activity_leader_sheet.html",
+        {"activity_date": activity_date, "blocks": all_blocks}
+    )
+    if not pdf_bytes:
+        return render(request, "afternoon_activity/activity_leader_sheet.html", {"activity_date": activity_date, "blocks": all_blocks})
+    return HttpResponse(pdf_bytes, content_type="application/pdf")
 
 def cabin_activities_pdf(request, session_id, activity_date, activityPK):
     """

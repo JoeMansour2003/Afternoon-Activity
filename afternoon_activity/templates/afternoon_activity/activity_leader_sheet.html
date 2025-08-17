@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Activity Sheet - {{ activity_date }}</title>
+  <style>
+    @page { size: Letter portrait; margin: 0.5in; }
+    body { font-family: Arial, sans-serif; font-size: 12.5px; line-height: 1.25; }
+
+    /* One activity per full-width block; keep each together */
+    .activity-block {
+      border: 1px solid #999;
+      margin: 8px 0 10px 0;
+      padding: 6px 8px;
+      page-break-inside: avoid;
+    }
+    .activity-title {
+      font-size: 16px;
+      font-weight: bold;
+      margin: 0 0 4px 0;
+    }
+    .badge {
+      display: inline-block;
+      padding: 1px 6px;
+      border: 1px solid #333;
+      border-radius: 3px;
+      font-size: 10.5px;
+      margin-left: 6px;
+    }
+    .counts {
+      font-size: 12px;
+      margin: 0 0 6px 0;
+    }
+
+    table.list { width: 100%; border-collapse: collapse; table-layout: fixed; }
+    table.list th, table.list td { border: 1px solid #000; padding: 5px 7px; }
+    table.list th { background: #f3f3f3; font-size: 12.5px; }
+    table.list td { font-size: 12.5px; }
+    th.cabin, td.cabin { text-align: left; width: 22%; }
+    th.name,  td.name  { width: 78%; }
+
+    /* extra protection */
+    .activity-block table, .activity-block thead, .activity-block tbody, .activity-block tr, .activity-block th, .activity-block td {
+      page-break-inside: avoid;
+    }
+  </style>
+</head>
+<body>
+  {% for block in blocks %}
+    <div class="activity-block">
+      <div class="activity-title">
+        {{ block.pa.activity.activity }}
+        {% if block.is_rainy %}<span class="badge">Rainy Day</span>{% else %}<span class="badge">Sunny Day</span>{% endif %}
+      </div>
+      <div class="counts">
+        Current: {{ block.campers_count }}{% if block.spots_left is not None %} | Spots Left: {{ block.spots_left }}{% endif %}{% if block.max_capacity is not None %} | Max: {{ block.max_capacity }}{% endif %}
+      </div>
+      <table class="list">
+        <thead>
+          <tr>
+            <th class="cabin">Cabin</th>
+            <th class="name">Name</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in block.rows %}
+            <tr>
+              <td class="cabin">{{ r.cabin_number }}</td>
+              <td class="name">{{ r.first_name }} {{ r.last_name }}</td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="2">No campers.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% endfor %}
+</body>
+</html>
